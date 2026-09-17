@@ -1,8 +1,126 @@
-[
-  { "id": "seed-1", "place": "Library, third floor", "description": "Chairs rearranged overnight, every time. The night guard says he locks the room himself.", "spookiness": 3, "reported_at": "2026-08-01T14:20:00.000Z" },
-  { "id": "seed-2", "place": "Old gym", "description": "Lights flicker in a fixed pattern after 9pm, always three short and one long.", "spookiness": 4, "reported_at": "2026-08-03T11:05:00.000Z" },
-  { "id": "seed-3", "place": "Parking basement", "description": "Footsteps with no one there. Reported separately by three different people in one week, which is what makes this one hard to dismiss. Two of them were alone at the time and did not know about the others. This entry is deliberately long, because a seed row of four words hides every text-wrapping bug you have.", "spookiness": 5, "reported_at": "2026-08-05T22:40:00.000Z" },
-  { "id": "seed-4", "place": "Canteen", "description": "A cold spot near the back door, every morning before seven.", "spookiness": 1, "reported_at": "2026-08-06T07:15:00.000Z" },
-  { "id": "seed-5", "place": "AB Building stairwell", "description": "", "spookiness": 2, "reported_at": "2026-08-08T18:30:00.000Z" },
-  { "id": "seed-6", "place": "Chapel garden", "description": "Someone humming. Stops the moment you turn around.", "spookiness": 3, "reported_at": "2026-08-10T05:50:00.000Z" }
-]
+{
+  "orgs": [
+    { "id": "org-cs", "name": "Computing Society", "shortName": "CompSoc" },
+    { "id": "org-dc", "name": "Debate Circle", "shortName": "Debate" },
+    { "id": "org-pg", "name": "Photography Guild", "shortName": "PhotoGuild" },
+    { "id": "org-rc", "name": "Robotics Club", "shortName": "Robotics" },
+    { "id": "org-kc", "name": "Kapampangan Culture Circle", "shortName": "KCC" }
+  ],
+  "students": [
+    { "id": "stu-1", "name": "Bea Manalo" },
+    { "id": "stu-2", "name": "Carlo Dizon" },
+    { "id": "stu-3", "name": "Jasmine Pineda" },
+    { "id": "stu-4", "name": "Miguel Santos" },
+    { "id": "stu-5", "name": "Andrea Lacson" },
+    { "id": "stu-6", "name": "Paolo Yap" },
+    { "id": "stu-7", "name": "Kristine Mercado" },
+    { "id": "stu-8", "name": "Rafael Tuazon" }
+  ],
+  "events": [
+    {
+      "id": "evt-1",
+      "orgId": "org-cs",
+      "title": "Intro to Web Accessibility",
+      "venue": "SJH Auditorium",
+      "startsAt": "2026-09-25T05:00:00.000Z",
+      "capacity": 40,
+      "seededReservations": 17,
+      "description": "A 90-minute hands-on session on making React apps usable with a keyboard and a screen reader. Bring a laptop with Node installed."
+    },
+    {
+      "id": "evt-2",
+      "orgId": "org-dc",
+      "title": "Open Parliamentary Debate Night",
+      "venue": "PGN Building, Room 402",
+      "startsAt": "2026-09-26T09:00:00.000Z",
+      "capacity": 30,
+      "seededReservations": 30,
+      "description": "Four teams, one motion announced fifteen minutes before the first speech. Spectators welcome to stay for the adjudication."
+    },
+    {
+      "id": "evt-3",
+      "orgId": "org-pg",
+      "title": "Golden Hour Photo Walk",
+      "venue": "Main Gate",
+      "startsAt": "2026-09-27T09:30:00.000Z",
+      "capacity": 20,
+      "seededReservations": 12,
+      "description": "A slow walk around campus at sunset. Phone cameras are fine. The guild lends out three cameras on a first come, first served basis."
+    },
+    {
+      "id": "evt-4",
+      "orgId": "org-rc",
+      "title": "Line-Follower Robot Build",
+      "venue": "Engineering Lab 2",
+      "startsAt": "2026-09-29T06:00:00.000Z",
+      "capacity": 25,
+      "seededReservations": 24,
+      "description": "Teams of three build a small line-following robot from a kit. The club supplies the kits, so the seat limit matches the number of kits."
+    },
+    {
+      "id": "evt-5",
+      "orgId": "org-kc",
+      "title": "Kapampangan Language Circle",
+      "venue": "MGN Building, Room 210",
+      "startsAt": "2026-09-30T07:00:00.000Z",
+      "capacity": 35,
+      "seededReservations": 9,
+      "description": "Conversation practice for beginners and heritage speakers. This week covers greetings, numbers, and ordering at the canteen."
+    },
+    {
+      "id": "evt-6",
+      "orgId": "org-cs",
+      "title": "Git Rescue Clinic",
+      "venue": "CCS Laboratory 3",
+      "startsAt": "2026-10-01T06:00:00.000Z",
+      "capacity": 24,
+      "seededReservations": 21,
+      "description": "Bring the repository you broke. Officers help untangle merge conflicts, detached heads, and the commit that should never have been pushed."
+    },
+    {
+      "id": "evt-7",
+      "orgId": "org-dc",
+      "title": "Public Speaking Basics",
+      "venue": "SJH Auditorium",
+      "startsAt": "2026-10-03T02:00:00.000Z",
+      "capacity": 60,
+      "seededReservations": 33,
+      "description": "A morning workshop on structuring a three-minute talk, with short practice rounds in pairs."
+    },
+    {
+      "id": "evt-8",
+      "orgId": "org-pg",
+      "title": "Editing Phone Photos",
+      "venue": "PGN Building, Room 305",
+      "startsAt": "2026-10-06T08:00:00.000Z",
+      "capacity": 30,
+      "seededReservations": 5,
+      "description": "Free apps only. Cropping, light, and colour, using photos from the golden hour walk."
+    },
+    {
+      "id": "evt-9",
+      "orgId": "org-rc",
+      "title": "Robot Race Finals",
+      "venue": "Covered Court",
+      "startsAt": "2026-10-09T07:30:00.000Z",
+      "capacity": 150,
+      "seededReservations": 61,
+      "description": "The line-follower teams race on a new track. Seats are for spectators; teams register separately with the club."
+    },
+    {
+      "id": "evt-10",
+      "orgId": "org-kc",
+      "title": "Sisig and Stories Night",
+      "venue": "Canteen Annex",
+      "startsAt": "2026-10-10T10:00:00.000Z",
+      "capacity": 45,
+      "seededReservations": 44,
+      "description": "Members share family recipes and the stories behind them. Food is served, so the headcount has to be real."
+    }
+  ],
+  "rsvps": [
+    { "id": "rsvp-seed-1", "eventId": "evt-1", "studentId": "stu-1", "createdAt": "2026-09-16T03:12:00.000Z" },
+    { "id": "rsvp-seed-2", "eventId": "evt-5", "studentId": "stu-1", "createdAt": "2026-09-16T04:40:00.000Z" },
+    { "id": "rsvp-seed-3", "eventId": "evt-3", "studentId": "stu-2", "createdAt": "2026-09-16T05:05:00.000Z" }
+  ]
+}
