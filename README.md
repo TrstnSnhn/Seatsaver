@@ -3,10 +3,10 @@
 SeatSaver lets a student-org officer at Holy Angel University post an event with a fixed number of seats, and lets a student reserve one of those seats in a single tap. Organizers see the real headcount before the day instead of reconciling a Google Form with a Messenger poll.
 
 **Live site:** https://trstnsnhn.github.io/Seatsaver/
-**API:** not deployed yet (planned for week 2, with a Neon PostgreSQL database)
-**Demo video:** not recorded yet
+**API:** planned for week 2, with a Neon PostgreSQL database
+**Demo video:** coming in week 3
 
-> **This deployment runs in demo mode.** The interface is real; the backend is simulated in your browser so the site works without a server. See [Demo mode](#demo-mode).
+> **This deployment runs in demo mode.** You use the real interface while your browser simulates the backend, so the site works without a server. See [Demo mode](#demo-mode).
 
 ![The Events screen: a grid of event cards, each with a yellow date block, org tag, venue, and a seat meter](docs/assets/screenshot-events.png)
 
@@ -18,10 +18,10 @@ End of week 1 of 3. The React client runs the three student screens against a si
 
 **Working now, in demo mode:**
 
-- **Events** lists every event, soonest first, with an org filter, a date range, and a title search
+- **Events** lists events, soonest first, with an org filter, a date range, and a title search
 - **Event detail** shows the venue, time, and a seat meter; **Save my seat** reserves a seat and **Cancel my seat** gives it back
 - **My seats** lists the events the current student holds a seat for, with a cancel button on each
-- A **student picker** in the header stands in for login: choose a seeded student, and every screen follows that choice
+- A **student picker** in the header stands in for login: choose a seeded student, and all three screens switch to that student
 - The seat limit and the one-seat-per-student rule both reject with `409 Conflict`, and a full event disables its button
 
 **Planned for weeks 2 and 3:**
@@ -32,13 +32,13 @@ End of week 1 of 3. The React client runs the three student screens against a si
 
 ## Using it
 
-1. Open the live site. Bea Manalo is selected in the header.
+1. Open the live site. The header starts on Bea Manalo.
 2. Pick an event card and choose **View**. The seat meter shows one square per seat: solid squares are taken, outlines are open, and your seat has a yellow centre.
 3. Choose **Save my seat**. The count goes up and the button changes to **Cancel my seat**.
-4. Open **My seats** to see every event the selected student holds a seat for.
-5. Switch to another student in the header and open the same event. If you took the last seat, the button reads **Event full**.
+4. Open **My seats** to see the events the selected student holds a seat for.
+5. Switch to another student in the header and open the same event. If you took the last seat, you see a disabled **Event full** button.
 
-Everything you do is stored in your browser's `localStorage` under `seatsaver:db:v1`. Clear site data to start again from the sample events.
+The app stores everything you do in your browser's `localStorage` under `seatsaver:db:v1`. Clear site data to start again from the sample events.
 
 ## Running it yourself
 
@@ -65,11 +65,11 @@ You should see the Events screen with ten sample events and a demo-mode notice u
     npm run build
     npm run preview             # http://localhost:4173
 
-**The API.** The `server/` folder still holds the class template's sample API. Its setup steps arrive with the SeatSaver API in week 2.
+**The API.** `server/` holds the class template's sample API for now. I will add its setup steps with the SeatSaver API in week 2.
 
 ## Environment variables
 
-None of these are committed. Each folder's `.env.example` lists them with placeholder values.
+Keep these out of git. Each folder's `.env.example` lists them with placeholder values.
 
 | Name | Where | What it is |
 | --- | --- | --- |
@@ -80,7 +80,7 @@ None of these are committed. Each folder's `.env.example` lists them with placeh
 | `NODE_ENV` | server | `production` on the host |
 | `PORT` | server | set by the host; do not set it yourself |
 
-Every `VITE_` value ends up in the built JavaScript and is public. No keys, passwords, or connection strings go in one.
+Vite copies each `VITE_` value into the built JavaScript, where anyone can read it. Never put a key, password, or connection string in one.
 
 ## Demo mode
 
@@ -91,11 +91,11 @@ The client runs two ways, chosen by `VITE_USE_MOCK_API` at build time.
 | unset, or `true` | `client/src/api/mockApi.js` answers requests from `localStorage`, starting from `seed.json`. No server, no database, nothing shared between visitors |
 | `false` | `client/src/api/httpApi.js` calls the Express API at `VITE_API_BASE_URL` |
 
-Both files export the same seven functions, so no screen changes when the API goes live.
+Both files export the same seven functions, so switching to the live API needs no screen changes.
 
 ## API
 
-The client already calls these routes through `httpApi.js`. The server implements them in week 2.
+`httpApi.js` calls these routes today. I will build them in the Express server in week 2.
 
 | Method | Path | What it does |
 | --- | --- | --- |
@@ -117,7 +117,7 @@ Planned with the org dashboard: `POST /api/orgs/:orgId/events`, `PATCH /api/even
       src/components/    Header, EventCard, SeatMeter, FilterBar, Button, StatusMessage
       src/context/       StudentContext: the selected student, shared across pages
       src/styles.css     design tokens as CSS custom properties
-    server/              Express API (still the class template's sample)
+    server/              Express API (the class template's sample for now)
     docs/                planning documents, weekly reports, and screenshots in assets/
 
 ## Screenshots
@@ -132,10 +132,10 @@ Planned with the org dashboard: `POST /api/orgs/:orgId/events`, `PATCH /api/even
 
 ## Known issues and next steps
 
-- Demo mode only: reservations live in one browser, so two visitors never compete for the same seat yet
-- `server/` still contains the template's sightings API; the SeatSaver schema and routes are next
-- The seat limit under two simultaneous reservations needs a database-level answer, which the simulated backend cannot test
-- No org dashboard yet, so the header has no Manage link
+- Demo mode keeps reservations in one browser, so two visitors cannot compete for the same seat
+- `server/` contains the template's sightings API; I write the SeatSaver schema and routes next
+- I cannot test two simultaneous reservations for the last seat until PostgreSQL enforces the limit
+- The header has no Manage link until I build the org dashboard
 
 ## Licence
 
