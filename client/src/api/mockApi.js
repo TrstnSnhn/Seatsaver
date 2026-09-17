@@ -6,6 +6,7 @@
 
 import seed from './seed.json'
 import { ApiError, PROBLEM_MESSAGES, reservationProblem } from './rules.js'
+import { manilaDateKey } from '../format.js'
 
 const KEY = 'seatsaver:db:v1'
 
@@ -81,8 +82,8 @@ export async function listEvents({ orgId = '', from = '', to = '', q = '' } = {}
   const query = q.trim().toLowerCase()
   return db.events
     .filter((event) => !orgId || event.orgId === orgId)
-    .filter((event) => !from || event.startsAt.slice(0, 10) >= from)
-    .filter((event) => !to || event.startsAt.slice(0, 10) <= to)
+    .filter((event) => !from || manilaDateKey(event.startsAt) >= from)
+    .filter((event) => !to || manilaDateKey(event.startsAt) <= to)
     .filter((event) => !query || event.title.toLowerCase().includes(query))
     .sort(bySoonest)
     .map((event) => withDetails(db, event))
