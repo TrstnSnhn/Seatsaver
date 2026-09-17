@@ -1,156 +1,123 @@
-# Your Project Name
+# SeatSaver
 
-> **Replace this whole file.** It is a worked example of the README your project
-> will be graded from, not a file to leave as it is. Start with
-> [START-HERE.md](START-HERE.md).
+SeatSaver lets a student-org officer at Holy Angel University post an event with a fixed number of seats, and lets a student reserve one of those seats in a single tap. Organizers see the real headcount before the day instead of reconciling a Google Form with a Messenger poll.
 
-One sentence saying what this does and who it is for.
+**Live site:** https://trstnsnhn.github.io/Seatsaver/
+**API:** not deployed yet (planned for week 2)
+**Demo video:** not recorded yet
 
-**Live site:** https://yourusername.github.io/your-repo-name/
-**API:** https://your-api.onrender.com/healthz
-**Demo video:** (link)
+> **This deployment runs in demo mode.** The interface is real; the backend is simulated in your browser so the site works without a server. See [Demo mode](#demo-mode).
 
-> **This deployment is running in demo mode.** The interface is real; the backend
-> is simulated in your browser so the site works without a server. See
-> [Demo mode](#demo-mode) below. Delete this quote once your API is live.
+## Status
 
-![A screenshot of the main screen](docs/assets/screenshot.png)
+Week 1 of 3. The repository still runs the class template's sample app (a ghost-sightings list) while the SeatSaver screens and API are built. This README describes the planned app and marks what exists today.
 
-## What it does
+## What it does (planned)
 
-- Report a sighting with a place, a description and a spookiness rating
-- Browse everything reported, newest first
-- Delete a report
+- Browse upcoming events, filter by org and date range, and search by title
+- Open an event and save a seat, or cancel the seat you hold
+- See every event you hold a seat for on a My seats page
+- As an org officer, create, edit, and delete events and see the attendee list
+
+The API enforces two rules in PostgreSQL: an event cannot take more reservations than its seat limit, and a student cannot reserve the same event twice. Both answer `409 Conflict`.
 
 ## Built with
 
-React and Vite on the front end, Express and PostgreSQL on the back end. The
-client is on GitHub Pages, the API on (host), the database on (host).
-
-## Demo mode
-
-This repository can run two ways, chosen by one environment variable at **build**
-time.
-
-**Demo mode is the default.** Only the exact string `false` turns it off, so a
-forgotten or mistyped variable leaves you on the simulated backend with a visible
-notice rather than on a silently broken build.
-
-| `VITE_USE_MOCK_API` | What happens |
-| --- | --- |
-| unset, or `true` | The client answers its own requests from `localStorage`. No server, no database, nothing shared between visitors. This is what the template ships with, so the GitHub Pages link works on day one. |
-| `false` | The client calls the Express API at `VITE_API_BASE_URL`, which reads and writes real PostgreSQL. |
-
-**Demo mode is a starting point and a fallback, not a finished project.** Your
-finals submission is all three pieces deployed and talking to each other. Demo
-mode is there so you can build the interface in week one before the API exists,
-and so you have something to show if a free tier is asleep during your demo.
-
-GitHub Pages serves files and cannot run Node, so the API and the database can
-never live there. They go somewhere else:
-
-| Piece | Options |
-| --- | --- |
-| **API** | Render, Railway, Fly.io, Koyeb, a VPS, or [self-hosted behind a tunnel](../content/extending-your-app/11-self-hosting.md) |
-| **Database** | Neon, Supabase, Railway, Aiven, or your own PostgreSQL |
-
-`content/extending-your-app/` in your course workspace walks through all of it.
-Page 10 is the decision page if you do not know which to pick.
+React and Vite on the front end, Express and PostgreSQL on the back end. The client deploys to GitHub Pages; the API and database hosts are not chosen yet.
 
 ## Running it yourself
 
+**Requirements:** Node.js 20 or newer. PostgreSQL 15 or newer for the full stack.
+
 **The client only, in demo mode.** No database needed.
 
-    cd client
+    git clone https://github.com/TrstnSnhn/Seatsaver.git
+    cd Seatsaver/client
     npm install
     cp .env.example .env        # VITE_USE_MOCK_API stays true
     npm run dev                 # http://localhost:5173
 
-**The whole stack.** Needs a PostgreSQL, either local or hosted.
+You should see the sample list and a demo-mode notice. Anything you add is stored in your browser's `localStorage`.
 
-    # 1. the database
-    docker run --name my-pg -e POSTGRES_PASSWORD=devpassword \
-      -e POSTGRES_DB=haunted -p 5432:5432 -d postgres:17
+**The whole stack.** Needs a running PostgreSQL, local or hosted.
 
-    # 2. the API
+    # the API
     cd server
     npm install
-    cp .env.example .env        # check DATABASE_URL
+    cp .env.example .env        # set DATABASE_URL to your database
     npm run db:reset            # creates the tables and adds sample rows
     npm run dev                 # http://localhost:3000
 
-    # 3. the client, in another terminal
+    # the client, in another terminal
     cd client
     npm install
-    cp .env.example .env
-    # set VITE_USE_MOCK_API=false
+    cp .env.example .env        # set VITE_USE_MOCK_API=false
     npm run dev
 
-Check the API on its own before you blame the client:
+Check the API on its own first:
 
     curl http://localhost:3000/healthz     # is the process alive
     curl http://localhost:3000/readyz      # is the database reachable
-    curl http://localhost:3000/api/sightings
 
 ## Environment variables
 
-None of these are committed. `.env.example` in each folder lists them with
-placeholder values.
+None of these are committed. Each folder's `.env.example` lists them with placeholder values.
 
 | Name | Where | What it is |
 | --- | --- | --- |
 | `DATABASE_URL` | server | PostgreSQL connection string. Contains a password |
 | `CORS_ORIGINS` | server | comma-separated origins allowed to call the API |
-| `NODE_ENV` | server | `production` on your host |
-| `PORT` | server | **set by the host**, do not set it yourself |
-| `VITE_USE_MOCK_API` | client, at build time | only `false` turns demo mode off; unset means on |
-| `VITE_API_BASE_URL` | client, at build time | your API's public URL, no trailing slash |
+| `NODE_ENV` | server | `production` on the host |
+| `PORT` | server | set by the host; do not set it yourself |
+| `VITE_USE_MOCK_API` | client, at build time | only `false` turns demo mode off |
+| `VITE_API_BASE_URL` | client, at build time | the API's public URL, no trailing slash |
 
-Every `VITE_` value is compiled into the built JavaScript and is **public**.
-Never put a key, a password or a connection string in one.
+Every `VITE_` value ends up in the built JavaScript and is public. No keys, passwords, or connection strings go in one.
 
-## Deploying
+## Demo mode
 
-**Client, to GitHub Pages.** Already wired up in
-`.github/workflows/deploy-pages.yml`. Two one-time steps:
+The client runs two ways, chosen by `VITE_USE_MOCK_API` at build time.
 
-1. **Settings > Pages > Build and deployment > Source: GitHub Actions.** Without
-   this the workflow goes green and publishes nothing.
-2. Nothing else, until your API is live. Demo mode is the default, so the first
-   deploy works on its own. When the API is up, add `VITE_USE_MOCK_API` = `false`
-   and `VITE_API_BASE_URL` under **Settings > Secrets and variables > Actions >
-   Variables**, then re-run the workflow.
+| `VITE_USE_MOCK_API` | What happens |
+| --- | --- |
+| unset, or `true` | The client answers its own requests from `localStorage`. No server, no database, nothing shared between visitors |
+| `false` | The client calls the Express API at `VITE_API_BASE_URL`, which reads and writes PostgreSQL |
 
-The repository must be **public** for Pages to serve it on a free account.
+Demo mode lets the interface ship in week 1. The final submission turns it off.
 
-**API and database.** Not automated here, because most hosts deploy straight from
-your repository with no workflow at all. Point your host at the `server/` folder,
-set the environment variables in its dashboard, and run `server/db/schema.sql`
-once against the hosted database.
+## API (planned)
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| `GET` | `/api/events?org=&from=&to=&q=` | list upcoming events with seats taken |
+| `GET` | `/api/events/:id` | one event with its org and seats left |
+| `POST` | `/api/orgs/:orgId/events` | create an event |
+| `PATCH` | `/api/events/:id` | update an event's fields |
+| `DELETE` | `/api/events/:id` | delete an event and its reservations |
+| `POST` | `/api/events/:id/rsvps` | reserve a seat; `409` when full or already reserved |
+| `DELETE` | `/api/events/:id/rsvps/:studentId` | cancel a reservation |
+| `GET` | `/api/students/:id/rsvps` | the events a student holds a seat for |
 
 ## Project structure
 
     client/          React front end, built by Vite
-      src/api/       ONE interface, two implementations, chosen by a variable
+      src/api/       one interface, two implementations (mock and HTTP)
       src/components/
     server/          Express API
       db/            pool, schema.sql, seed.sql, and a runner for them
-    compose.yml      only if you self-host
-    docs/            your planning documents and weekly reports
+    docs/            proposal, mockup, design system, weekly reports
+    compose.yml      only for self-hosting
 
-## Architecture
+## Screenshots
 
-Three or four sentences, or a small diagram. Which piece talks to which, and
-where each one is hosted.
+None yet. Screenshots of the SeatSaver screens go in `docs/assets/` as they are built.
 
-## What I would do next
+## Known issues and next steps
 
-Three honest bullets. This paragraph is worth more than it looks.
-
-## Author
-
-Your name, and a link. Course and section.
+- The client and server still contain the template's sample sightings app
+- No PostgreSQL has run for this project yet; the schema for orgs, events, students, and reservations comes next
+- The seat limit under two simultaneous reservations is the biggest open risk
 
 ## Licence
 
-MIT, see [LICENSE](LICENSE). Put your own name in it.
+MIT, see [LICENSE](LICENSE).
