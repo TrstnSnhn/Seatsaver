@@ -1,0 +1,57 @@
+.meter {
+  --s: 8px;
+  --g: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.mini { --s: 5px; --g: 2px; }
+
+.marks {
+  display: grid;
+  grid-template-columns: repeat(20, var(--s));
+  gap: var(--g);
+}
+
+.seat {
+  width: var(--s);
+  height: var(--s);
+  border: 1.5px solid var(--color-ink);
+}
+
+.mini .seat { border-width: 1px; }
+
+.taken { background: var(--color-ink); }
+
+.yours {
+  background:
+    linear-gradient(var(--color-field), var(--color-field)) center / 40% 40% no-repeat,
+    var(--color-ink);
+}
+
+.readout {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.count { font-weight: 700; }
+
+.mini .count { font-size: var(--font-size-small); font-weight: 600; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--space-1);
+  font-stretch: 75%;
+  font-weight: 800;
+  font-size: var(--font-size-small);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.left { background: var(--color-field); color: var(--color-ink); }
+.full { background: var(--color-ink); color: var(--color-field); }

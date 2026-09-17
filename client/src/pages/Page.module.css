@@ -1,0 +1,110 @@
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--space-3);
+}
+
+.title {
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: 2.5rem;
+  line-height: 0.95;
+  word-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.subtitle { color: var(--color-muted); }
+
+.stack { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: var(--space-1);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.tag {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-1);
+  border: 1.5px solid var(--color-ink);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  word-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px var(--space-2);
+  margin: var(--space-2) 0 var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: 2px solid var(--color-ink);
+  border-bottom: 1px solid var(--color-g200);
+}
+
+.facts dt {
+  color: var(--color-muted);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: var(--font-size-small);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.facts dd { margin: 0; font-weight: 600; }
+
+.description { max-width: 65ch; }
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-ink);
+}
+
+.panelTitle {
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: var(--font-size-heading);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.panel button { width: 100%; }
+
+@media (max-width: 1023px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767px) {
+  .title { font-size: 2rem; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .detail { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+}
