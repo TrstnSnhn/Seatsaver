@@ -1,5 +1,9 @@
 # SeatSaver
 
+[![Made with AI](https://img.shields.io/badge/Made_with-AI_assistance-blue)](AI-USAGE.md)
+
+Built with heavy assistance from Claude Code, Anthropic's CLI coding tool. What I asked for, what I kept, and where it got things wrong is written up in [AI-USAGE.md](AI-USAGE.md).
+
 SeatSaver lets a student-org officer at Holy Angel University post an event with a fixed number of seats, and lets an HAU student request one of those seats with their school email. An officer approves or rejects each request from a queue, so organizers know the real headcount before the day instead of reconciling a Google Form with a Messenger poll.
 
 **Live site:** https://trstnsnhn.github.io/Seatsaver/
