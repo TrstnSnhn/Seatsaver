@@ -29,6 +29,8 @@ export default function Header() {
         <nav className={styles.nav} aria-label="Main">
           <NavLink to="/" end className={navClass}>Events</NavLink>
           <NavLink to="/my-seats" className={navClass}>My seats</NavLink>
+          {/* Officers get one extra link. Everyone else never sees the page. */}
+          {student?.isAdmin && <NavLink to="/admin" className={navClass}>Requests</NavLink>}
         </nav>
         <div className={styles.picker}>
           <label htmlFor="student-picker" className={styles.pickerLabel}>Student</label>

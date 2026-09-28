@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { cancelSeat, listStudentSeats } from '../api'
 import Button from '../components/Button.jsx'
 import EventCard from '../components/EventCard.jsx'
+import StatusBadge from '../components/StatusBadge.jsx'
 import { EmptyState, StatusMessage } from '../components/StatusMessage.jsx'
 import { useStudent } from '../context/StudentContext.jsx'
 import styles from './Page.module.css'
@@ -56,7 +57,9 @@ export default function MySeatsPage() {
       <div className={styles.head}>
         <h1 className={styles.title}>My seats</h1>
         <p className={styles.subtitle}>
-          {student ? `Events ${student.name} holds a seat for, soonest first.` : 'Loading student'}
+          {student
+            ? `Seats ${student.name} holds, soonest first. A seat stays held while an officer reviews the request.`
+            : 'Loading student'}
         </p>
       </div>
 
@@ -89,15 +92,18 @@ export default function MySeatsPage() {
               event={event}
               mine
               action={
-                <Button
-                  variant="danger"
-                  size="small"
-                  onClick={() => handleCancel(event)}
-                  disabled={cancellingId === event.id}
-                  aria-label={`Cancel seat for ${event.title}`}
-                >
-                  {cancellingId === event.id ? 'Cancelling' : 'Cancel'}
-                </Button>
+                <span className={styles.seatActions}>
+                  <StatusBadge status={event.status} />
+                  <Button
+                    variant="danger"
+                    size="small"
+                    onClick={() => handleCancel(event)}
+                    disabled={cancellingId === event.id}
+                    aria-label={`Cancel seat for ${event.title}`}
+                  >
+                    {cancellingId === event.id ? 'Cancelling' : 'Cancel'}
+                  </Button>
+                </span>
               }
             />
           ))}

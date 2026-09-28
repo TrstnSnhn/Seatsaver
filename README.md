@@ -1,86 +1,188 @@
 # SeatSaver
 
-SeatSaver lets a student-org officer at Holy Angel University post an event with a fixed number of seats, and lets a student reserve one of those seats in a single tap. Organizers see the real headcount before the day instead of reconciling a Google Form with a Messenger poll.
+SeatSaver lets a student-org officer at Holy Angel University post an event with a fixed number of seats, and lets an HAU student request one of those seats with their school email. An officer approves or rejects each request from a queue, so organizers know the real headcount before the day instead of reconciling a Google Form with a Messenger poll.
 
 **Live site:** https://trstnsnhn.github.io/Seatsaver/
-**API:** planned for week 2, with a Neon PostgreSQL database
+**API:** Express and PostgreSQL, running against a Neon database. Not yet deployed to a public host
 **Demo video:** coming in week 3
 
-> **This deployment runs in demo mode.** You use the real interface while your browser simulates the backend, so the site works without a server. See [Demo mode](#demo-mode).
+> **The deployed site runs in demo mode.** You use the real interface while your browser simulates the backend, so the site works without a server. Run the API yourself to see the database path. See [Demo mode](#demo-mode).
 
-![The Events screen: a grid of event cards, each with a yellow date block, org tag, venue, and a seat meter](docs/assets/screenshot-events.png)
+![The officer request queue: four requests, each with the student, the event, the seat count, and Approve and Reject buttons](docs/assets/screenshot-admin-requests.png)
 
 ## Status
 
-End of week 1 of 3. The React client runs the three student screens against a simulated backend. The Express API, the PostgreSQL schema, and the org dashboard come in week 2.
+End of week 2 of 3. The Express API and the PostgreSQL schema are live on Neon. Two rules run in the database: only an address on the HAU student roster can request a seat, and the seat limit holds under two simultaneous requests. Officers answer requests in a queue. Week 3 adds the org dashboard for creating events, the deployed API, and the demo video.
 
 ## What it does
 
-**Working now, in demo mode:**
+**Students**
 
 - **Events** lists events, soonest first, with an org filter, a date range, and a title search
-- **Event detail** shows the venue, time, and a seat meter; **Save my seat** reserves a seat and **Cancel my seat** gives it back
-- **My seats** lists the events the current student holds a seat for, with a cancel button on each
-- A **student picker** in the header stands in for login: choose a seeded student, and all three screens switch to that student
-- The seat limit and the one-seat-per-student rule both reject with `409 Conflict`, and a full event disables its button
+- **Event detail** shows the venue, the time, and a seat meter, plus the request form
+- Requesting a seat needs an HAU student address ending in `@student.hau.edu.ph` that is on the roster. Any other address is refused with the reason
+- **My seats** lists the seats the current student holds, each marked waiting for approval or approved. A rejected request holds nothing, so it drops off the list
+- A **student picker** in the header stands in for login. Pick a seeded student and every screen follows
 
-**Planned for weeks 2 and 3:**
+**Officers**
 
-- An Express API and a PostgreSQL database on Neon, enforcing the same two rules in SQL
-- An **Org dashboard** where officers create, edit, and delete events and see the attendee list
-- A report of the most-reserved events
+- **Requests** lists every waiting request with the student, the student number, the event, and the seat count at that moment
+- **Approve** keeps the seat held. **Reject** frees it for someone else
+- Tabs switch between waiting, approved, and rejected
+- Students who are not officers never see the link, and typing `/admin` shows them why the page is closed
 
-## Using it
+**Rules the database enforces**
 
-1. Open the live site. The header starts on Bea Manalo.
-2. Pick an event card and choose **View**. The seat meter shows one square per seat: solid squares are taken, outlines are open, and your seat has a yellow centre.
-3. Choose **Save my seat**. The count goes up and the button changes to **Cancel my seat**.
-4. Open **My seats** to see the events the selected student holds a seat for.
-5. Switch to another student in the header and open the same event. If you took the last seat, you see a disabled **Event full** button.
+- A pending or an approved reservation holds a seat. A rejected one frees it
+- One reservation per student per event, through `UNIQUE (event_id, student_id)`
+- A seat limit that holds under concurrent requests, through `SELECT ... FOR UPDATE` on the event row inside a transaction
+- An email that ends in `@student.hau.edu.ph`, through a `CHECK` constraint on `students.email`
 
-The app stores everything you do in your browser's `localStorage` under `seatsaver:db:v1`. Clear site data to start again from the sample events.
+**Planned for week 3**
 
-## Running it yourself
+- An **Org dashboard** where officers create, edit, and delete events
+- The API deployed to a public host so the live site can leave demo mode
+- A report of the most-requested events
 
-**Requirements:** Node.js 20 or newer. The full stack will also need a PostgreSQL database (Neon from week 2).
+## Setup and installation
 
-**The client, in demo mode.** No database needed.
+**Requirements**
+
+| Tool | Version | Why |
+| --- | --- | --- |
+| Node.js | 20 or newer | the client build and the API both use it |
+| PostgreSQL | 16 or newer | local database, or a free Neon project |
+| Git | any recent version | to clone the repository |
+
+**1. Get the code**
 
     git clone https://github.com/TrstnSnhn/Seatsaver.git
-    cd Seatsaver/client
+    cd Seatsaver
+
+**2. Set up the database**
+
+Create a database, either locally or on [Neon](https://neon.tech). Neon gives you a connection string that ends in `?sslmode=require`.
+
+    cd server
     npm install
-    cp .env.example .env        # VITE_USE_MOCK_API stays true
-    npm run dev                 # http://localhost:5173
+    cp .env.example .env
 
-You should see the Events screen with ten sample events and a demo-mode notice under the header.
+Open `.env` and put your own connection string in `DATABASE_URL`. The file is git-ignored, so your password stays on your machine.
 
-**Tests.** The reservation rules have unit tests that need no browser and no database:
+    npm run db:reset      # creates the tables, then loads the sample data
+
+`db:reset` runs `db:schema` and then `db:seed`. The seed empties the tables first, so you can run it again whenever you want the sample data back.
+
+**3. Start the API**
+
+    npm run dev           # http://localhost:3000
+
+Check it:
+
+    curl http://localhost:3000/readyz
+    {"ok":true,"db":"up"}
+
+**4. Start the client**
+
+In a second terminal:
 
     cd client
-    npm test                    # 4 tests, node:test
+    npm install
+    cp .env.example .env
+
+To run against the API you just started, set both values in `client/.env`:
+
+    VITE_USE_MOCK_API=false
+    VITE_API_BASE_URL=http://localhost:3000
+
+Then:
+
+    npm run dev           # http://localhost:5173
+
+You should see the Events screen with ten sample events, and no demo-mode notice under the header. Leaving `VITE_USE_MOCK_API` at `true` skips steps 2 and 3 and runs the simulated backend instead.
+
+**Tests.** Both suites need no browser and no database:
+
+    cd server && npm test     # 4 tests, node:test
+    cd client && npm test     # 6 tests, node:test
 
 **Production build**, the same one GitHub Pages serves:
 
     cd client
     npm run build
-    npm run preview             # http://localhost:4173
-
-**The API.** `server/` holds the class template's sample API for now. I will add its setup steps with the SeatSaver API in week 2.
+    npm run preview           # http://localhost:4173
 
 ## Environment variables
 
 Keep these out of git. Each folder's `.env.example` lists them with placeholder values.
 
-| Name | Where | What it is |
-| --- | --- | --- |
-| `VITE_USE_MOCK_API` | client, at build time | only `false` turns demo mode off; unset means on |
-| `VITE_API_BASE_URL` | client, at build time | the API's public URL, no trailing slash |
-| `DATABASE_URL` | server | PostgreSQL connection string. Contains a password |
-| `CORS_ORIGINS` | server | comma-separated origins allowed to call the API |
-| `NODE_ENV` | server | `production` on the host |
-| `PORT` | server | set by the host; do not set it yourself |
+| Name | Where | Example | What it is |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | server | `postgresql://user:pass@host.neon.tech/seatsaver?sslmode=require` | PostgreSQL connection string. Contains a password |
+| `CORS_ORIGINS` | server | `http://localhost:5173` | comma-separated origins allowed to call the API |
+| `NODE_ENV` | server | `development` | set it to `production` on a host |
+| `PORT` | server | set by the host | do not set it yourself |
+| `VITE_USE_MOCK_API` | client, at build time | `false` | only `false` turns demo mode off; unset means on |
+| `VITE_API_BASE_URL` | client, at build time | `http://localhost:3000` | the API's public URL, no trailing slash |
 
-Vite copies each `VITE_` value into the built JavaScript, where anyone can read it. Never put a key, password, or connection string in one.
+Vite copies each `VITE_` value into the built JavaScript, where anyone can read it. Never put a key, a password, or a connection string in one.
+
+## Using it
+
+**As a student**
+
+1. Open the site. The header starts on the first student in the list.
+2. Pick an event card and choose **View**. The seat meter shows one square per seat: solid squares are taken, outlines are open.
+3. Type an HAU student address and choose **Request a seat**. Try `angelo@gmail.com` first to see the domain check refuse it.
+4. A valid request holds the seat and shows **Waiting for approval**.
+5. Open **My seats** to see every seat the student holds, with its status.
+
+**As an officer**
+
+1. Switch the header picker to Rhea Castro, the seeded officer.
+2. A **Requests** link appears in the navigation. Open it.
+3. Choose **Approve** to keep a seat held, or **Reject** to free it. The row leaves the waiting tab and appears under approved or rejected.
+
+## API
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| `GET` | `/healthz` | the process is up |
+| `GET` | `/readyz` | the process is up and the database answers |
+| `GET` | `/api/orgs` | list student orgs |
+| `GET` | `/api/students` | list students for the picker |
+| `GET` | `/api/events?org=&from=&to=&q=` | list events with seats held, soonest first |
+| `GET` | `/api/events/:id` | one event with its org and seats held |
+| `POST` | `/api/events/:id/rsvps` | request a seat, body `{ "email": "bea.manalo@student.hau.edu.ph" }` |
+| `DELETE` | `/api/events/:id/rsvps/:studentId` | cancel a reservation; `204`, or `404` when there is none |
+| `GET` | `/api/students/:id/rsvps` | the seats a student holds, each with its status |
+| `GET` | `/api/admin/requests?status=pending` | the officer queue, by status |
+| `POST` | `/api/admin/requests/:id/approve` | approve a waiting request; `404` once it is answered |
+| `POST` | `/api/admin/requests/:id/reject` | reject a waiting request and free the seat |
+
+`POST /api/events/:id/rsvps` answers in this order:
+
+| Status | When |
+| --- | --- |
+| `400` | the address does not end in `@student.hau.edu.ph` |
+| `403` | the address is not on the student roster |
+| `409` | the student already has a request for this event, or the event is full |
+| `201` | the request is recorded as `pending` and the seat is held |
+
+Planned with the org dashboard: `POST /api/orgs/:orgId/events`, `PATCH /api/events/:id`, `DELETE /api/events/:id`.
+
+## Database
+
+Four tables. `server/db/schema.sql` creates them and `server/db/seed.sql` fills them with 5 orgs, 129 students, 10 events, and about 250 reservations.
+
+| Table | Holds | Rules that live here |
+| --- | --- | --- |
+| `orgs` | student orgs | unique name |
+| `students` | the roster | unique email, `CHECK` that it ends in `@student.hau.edu.ph`, `is_admin` for officers |
+| `events` | events with a seat limit | `capacity > 0`, foreign key to `orgs` |
+| `reservations` | requests and their answers | `status` in `pending`, `approved`, `rejected`; `UNIQUE (event_id, student_id)` |
+
+Seats held are counted, never stored: `count(*)` over reservations whose status is `pending` or `approved`. There is no counter to fall out of step with the rows.
 
 ## Demo mode
 
@@ -88,54 +190,48 @@ The client runs two ways, chosen by `VITE_USE_MOCK_API` at build time.
 
 | `VITE_USE_MOCK_API` | What happens |
 | --- | --- |
-| unset, or `true` | `client/src/api/mockApi.js` answers requests from `localStorage`, starting from `seed.json`. No server, no database, nothing shared between visitors |
+| unset, or `true` | `client/src/api/mockApi.js` answers from `localStorage`, starting from `seed.json`. No server, no database, nothing shared between visitors |
 | `false` | `client/src/api/httpApi.js` calls the Express API at `VITE_API_BASE_URL` |
 
-Both files export the same seven functions, so switching to the live API needs no screen changes.
-
-## API
-
-`httpApi.js` calls these routes today. I will build them in the Express server in week 2.
-
-| Method | Path | What it does |
-| --- | --- | --- |
-| `GET` | `/api/orgs` | list student orgs |
-| `GET` | `/api/students` | list students for the picker |
-| `GET` | `/api/events?org=&from=&to=&q=` | list events with seats taken, soonest first |
-| `GET` | `/api/events/:id` | one event with its org and seats taken |
-| `POST` | `/api/events/:id/rsvps` | reserve a seat, body `{ "studentId": "stu-1" }`; `201`, or `409` when full or already reserved |
-| `DELETE` | `/api/events/:id/rsvps/:studentId` | cancel a reservation; `204`, or `404` when there is none |
-| `GET` | `/api/students/:id/rsvps` | the events a student holds a seat for |
-
-Planned with the org dashboard: `POST /api/orgs/:orgId/events`, `PATCH /api/events/:id`, `DELETE /api/events/:id`.
+Both files export the same nine functions and apply the same rules, including the HAU domain check, so switching to the live API needs no screen changes. Demo mode stores everything under `seatsaver:db:v2`. Clear site data to start again from the sample events.
 
 ## Project structure
 
     client/
       src/api/           mockApi.js and httpApi.js (same functions), rules.js, seed.json
-      src/pages/         EventsPage, EventDetailPage, MySeatsPage, NotFoundPage
-      src/components/    Header, EventCard, SeatMeter, FilterBar, Button, StatusMessage
+      src/pages/         EventsPage, EventDetailPage, MySeatsPage, AdminPage, NotFoundPage
+      src/components/    Header, EventCard, SeatMeter, StatusBadge, FilterBar, Button, StatusMessage
       src/context/       StudentContext: the selected student, shared across pages
       src/styles.css     design tokens as CSS custom properties
-    server/              Express API (the class template's sample for now)
+    server/
+      app.js             routes and the JSON shapes they return
+      repos.js           every SQL statement, all values passed as parameters
+      validation.js      the HAU email rule, shared with the tests
+      db/schema.sql      tables, constraints, and indexes
+      db/seed.sql        sample orgs, students, events, and reservations
     docs/                planning documents, weekly reports, and screenshots in assets/
 
 ## Screenshots
 
-**Event detail**, right after saving the last seat:
+**Event detail**, right after a request goes in:
 
-![Event detail for the Line-Follower Robot Build: 25 of 25 seats taken, a Cancel my seat button, and a Seat saved message](docs/assets/screenshot-event-detail.png)
+![Event detail for the Git Rescue Clinic: 22 of 24 seats taken, a Waiting for approval badge, and a message saying the seat is held while an officer reviews it](docs/assets/screenshot-request-seat.png)
 
-**My seats** on a 390px phone:
+**My seats**, showing both statuses:
 
-![My seats on a phone: three stacked event cards, each with a red Cancel button](docs/assets/screenshot-my-seats-phone.png)
+![My seats: one card marked Seat approved and one marked Waiting for approval, each with a Cancel button](docs/assets/screenshot-my-seats-status.png)
+
+**The request queue** on a 390px phone:
+
+![The officer queue on a phone: each request stacks the student, the event, and the Approve and Reject buttons](docs/assets/screenshot-admin-phone.png)
 
 ## Known issues and next steps
 
-- Demo mode keeps reservations in one browser, so two visitors cannot compete for the same seat
-- `server/` contains the template's sightings API; I write the SeatSaver schema and routes next
-- I cannot test two simultaneous reservations for the last seat until PostgreSQL enforces the limit
-- The header has no Manage link until I build the org dashboard
+- The API runs on my machine, so the deployed site stays in demo mode until I host it in week 3
+- Officers are marked by `is_admin` in the database and the client trusts that flag. There is no login, so anyone who can reach the API can call the admin routes. Week 3 adds a shared officer key at minimum
+- A rejected request frees the seat and then vanishes from the student's My seats list, with no email and no notice. The student can only tell by opening the event again, which is the first thing I would fix
+- The org dashboard for creating and editing events is not built
+- `npm test` covers the pure rules. The SQL path is checked by hand with curl, and a seed-and-query test would catch more
 
 ## Licence
 

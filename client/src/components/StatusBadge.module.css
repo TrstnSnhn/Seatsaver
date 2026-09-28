@@ -1,0 +1,39 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 0 var(--space-1);
+  border: 1.5px solid var(--color-ink);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.mark {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--color-ink);
+}
+
+/* Waiting: an outline, the same mark an open seat uses. */
+.pending { border-style: dashed; }
+
+/* Approved: filled, like a taken seat. */
+.approved { background: var(--color-field); }
+
+.approved .mark { background: var(--color-ink); }
+
+.rejected {
+  color: var(--color-alert);
+  border-color: var(--color-alert);
+}
+
+.rejected .mark {
+  border-color: var(--color-alert);
+  background: linear-gradient(var(--color-alert), var(--color-alert)) center / 100% 1.5px no-repeat;
+}

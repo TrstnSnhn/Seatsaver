@@ -1,32 +1,44 @@
 // The simulated backend.
 //
 // Same function names, same return shapes, and the same kind of failure as
-// httpApi.js, so components cannot tell the difference. Data lives in the
+// httpApi.js, so the screens cannot tell the difference. Data lives in the
 // visitor's own browser and goes no further.
 
 import seed from './seed.json'
-import { ApiError, PROBLEM_MESSAGES, reservationProblem } from './rules.js'
-import { manilaDateKey } from '../format.js'
+import {
+  ApiError,
+  HOLD_STATUSES,
+  PROBLEM_MESSAGES,
+  normaliseStudentEmail,
+  reservationProblem,
+} from './rules.js'
 
-const KEY = 'seatsaver:db:v1'
+const KEY = 'seatsaver:db:v2'
 
 // A real network is not instant. The delay keeps the loading states honest.
 const delay = (ms = 250) => new Promise((resolve) => setTimeout(resolve, ms))
 
-// Seed events carry a count of reservations by students outside the demo
-// picker. Expand them into real reservation rows so every count is derived
-// from reservations, the same way the database will count them.
+// Seed events carry a count of seats held by students outside the demo picker.
+// Expand them into reservation rows so every count comes from reservations, the
+// same way the database counts them.
 function buildInitialDb() {
-  const guestRsvps = seed.events.flatMap((event) =>
+  const guestReservations = seed.events.flatMap((event) =>
     Array.from({ length: event.seededReservations }, (_, index) => ({
       id: `guest-${event.id}-${index}`,
       eventId: event.id,
       studentId: `guest-${event.id}-${index}`,
-      createdAt: '2026-09-15T00:00:00.000Z',
+      status: 'approved',
+      requestedAt: '2026-09-18T00:00:00.000Z',
+      decidedAt: '2026-09-19T00:00:00.000Z',
     }))
   )
   const events = seed.events.map(({ seededReservations, ...event }) => event)
-  return { orgs: seed.orgs, students: seed.students, events, rsvps: [...guestRsvps, ...seed.rsvps] }
+  return {
+    orgs: seed.orgs,
+    students: seed.students,
+    events,
+    reservations: [...guestReservations, ...seed.reservations],
+  }
 }
 
 function readDb() {
@@ -47,9 +59,13 @@ function writeDb(db) {
   return db
 }
 
+const holds = (reservation) => HOLD_STATUSES.includes(reservation.status)
+
 function withDetails(db, event) {
   const org = db.orgs.find((candidate) => candidate.id === event.orgId)
-  const seatsTaken = db.rsvps.filter((rsvp) => rsvp.eventId === event.id).length
+  const seatsTaken = db.reservations.filter(
+    (reservation) => reservation.eventId === event.id && holds(reservation)
+  ).length
   return {
     ...event,
     orgName: org?.name ?? 'Unknown org',
@@ -63,6 +79,15 @@ function findEvent(db, id) {
   if (!event) throw new ApiError('Event not found', 404)
   return event
 }
+
+// The Manila calendar date, to compare with the date filters.
+const manilaDate = (iso) =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(iso))
 
 const bySoonest = (a, b) => a.startsAt.localeCompare(b.startsAt)
 
@@ -82,8 +107,8 @@ export async function listEvents({ orgId = '', from = '', to = '', q = '' } = {}
   const query = q.trim().toLowerCase()
   return db.events
     .filter((event) => !orgId || event.orgId === orgId)
-    .filter((event) => !from || manilaDateKey(event.startsAt) >= from)
-    .filter((event) => !to || manilaDateKey(event.startsAt) <= to)
+    .filter((event) => !from || manilaDate(event.startsAt) >= from)
+    .filter((event) => !to || manilaDate(event.startsAt) <= to)
     .filter((event) => !query || event.title.toLowerCase().includes(query))
     .sort(bySoonest)
     .map((event) => withDetails(db, event))
@@ -95,46 +120,115 @@ export async function getEvent(id) {
   return withDetails(db, findEvent(db, id))
 }
 
-export async function reserveSeat(eventId, studentId) {
+// Checks the HAU domain, then the roster, then the seat rules, in that order,
+// and answers with the same status codes the API sends.
+export async function requestSeat(eventId, rawEmail) {
   await delay()
   const db = readDb()
   const event = findEvent(db, eventId)
-  const reservations = db.rsvps.filter((rsvp) => rsvp.eventId === eventId)
+
+  const email = normaliseStudentEmail(rawEmail)
+  if (!email) throw new ApiError(PROBLEM_MESSAGES.domain, 400)
+
+  const student = db.students.find((candidate) => candidate.email === email)
+  if (!student) throw new ApiError(PROBLEM_MESSAGES.roster, 403)
+
+  const forEvent = db.reservations.filter((reservation) => reservation.eventId === eventId)
+  const existing = forEvent.find((reservation) => reservation.studentId === student.id)
   const problem = reservationProblem({
     capacity: event.capacity,
-    seatsTaken: reservations.length,
-    alreadyReserved: reservations.some((rsvp) => rsvp.studentId === studentId),
+    seatsTaken: forEvent.filter(holds).length,
+    alreadyHolds: Boolean(existing) && holds(existing),
   })
   if (problem) throw new ApiError(PROBLEM_MESSAGES[problem], 409)
 
   const created = {
     id: crypto.randomUUID(),
     eventId,
-    studentId,
-    createdAt: new Date().toISOString(),
+    studentId: student.id,
+    status: 'pending',
+    requestedAt: new Date().toISOString(),
+    decidedAt: null,
   }
-  writeDb({ ...db, rsvps: [...db.rsvps, created] })
-  return created
+  writeDb({
+    ...db,
+    reservations: [...db.reservations.filter((reservation) => reservation !== existing), created],
+  })
+  return { ...created, student }
 }
 
 export async function cancelSeat(eventId, studentId) {
   await delay()
   const db = readDb()
-  const remaining = db.rsvps.filter(
-    (rsvp) => !(rsvp.eventId === eventId && rsvp.studentId === studentId)
+  const remaining = db.reservations.filter(
+    (reservation) =>
+      !(reservation.eventId === eventId && reservation.studentId === studentId && holds(reservation))
   )
-  if (remaining.length === db.rsvps.length) {
+  if (remaining.length === db.reservations.length) {
     throw new ApiError('No reservation to cancel', 404)
   }
-  writeDb({ ...db, rsvps: remaining })
+  writeDb({ ...db, reservations: remaining })
   return null
 }
 
 export async function listStudentSeats(studentId) {
   await delay()
   const db = readDb()
-  return db.rsvps
-    .filter((rsvp) => rsvp.studentId === studentId)
-    .map((rsvp) => ({ ...withDetails(db, findEvent(db, rsvp.eventId)), reservedAt: rsvp.createdAt }))
+  return db.reservations
+    .filter((reservation) => reservation.studentId === studentId && holds(reservation))
+    .map((reservation) => ({
+      ...withDetails(db, findEvent(db, reservation.eventId)),
+      status: reservation.status,
+      requestedAt: reservation.requestedAt,
+    }))
     .sort(bySoonest)
+}
+
+export async function listRequests(status = 'pending') {
+  await delay()
+  const db = readDb()
+  return db.reservations
+    .filter((reservation) => reservation.status === status)
+    .map((reservation) => {
+      const event = withDetails(db, findEvent(db, reservation.eventId))
+      const student = db.students.find((candidate) => candidate.id === reservation.studentId)
+      return {
+        id: reservation.id,
+        status: reservation.status,
+        requestedAt: reservation.requestedAt,
+        decidedAt: reservation.decidedAt,
+        studentName: student?.name ?? 'Unknown student',
+        studentEmail: student?.email ?? '',
+        studentNo: student?.studentNo ?? '',
+        eventId: event.id,
+        eventTitle: event.title,
+        eventVenue: event.venue,
+        eventStartsAt: event.startsAt,
+        capacity: event.capacity,
+        seatsTaken: event.seatsTaken,
+      }
+    })
+    .sort((a, b) => a.requestedAt.localeCompare(b.requestedAt))
+}
+
+export async function decideRequest(requestId, decision) {
+  await delay()
+  const db = readDb()
+  const target = db.reservations.find(
+    (reservation) => reservation.id === requestId && reservation.status === 'pending'
+  )
+  if (!target) throw new ApiError('No pending request with that id', 404)
+
+  const decided = {
+    ...target,
+    status: decision === 'approve' ? 'approved' : 'rejected',
+    decidedAt: new Date().toISOString(),
+  }
+  writeDb({
+    ...db,
+    reservations: db.reservations.map((reservation) =>
+      reservation.id === requestId ? decided : reservation
+    ),
+  })
+  return decided
 }

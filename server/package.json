@@ -1,5 +1,5 @@
 {
-  "name": "final-project-server",
+  "name": "seatsaver-server",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -8,7 +8,8 @@
     "dev": "node --env-file=.env --watch server.js",
     "db:schema": "node --env-file=.env db/run.js db/schema.sql",
     "db:seed": "node --env-file=.env db/run.js db/seed.sql",
-    "db:reset": "npm run db:schema && npm run db:seed"
+    "db:reset": "npm run db:schema && npm run db:seed",
+    "test": "node --test validation.test.js"
   },
   "engines": {
     "node": ">=20"

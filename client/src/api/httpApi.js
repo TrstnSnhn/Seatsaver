@@ -1,7 +1,7 @@
 // The real client. Every function here talks to the Express API.
 //
-// mockApi.js exists so the interface can ship before the API is deployed. Both
-// files export the same functions with the same return shapes.
+// mockApi.js mirrors it for demo mode. Both files export the same functions
+// with the same return shapes.
 
 import { ApiError } from './rules.js'
 
@@ -44,10 +44,12 @@ export function listEvents({ orgId = '', from = '', to = '', q = '' } = {}) {
 
 export const getEvent = (id) => request(`/api/events/${encodeURIComponent(id)}`)
 
-export const reserveSeat = (eventId, studentId) =>
+// The API checks the address against the HAU domain and the student roster
+// before it holds a seat, so the email travels with the request.
+export const requestSeat = (eventId, email) =>
   request(`/api/events/${encodeURIComponent(eventId)}/rsvps`, {
     method: 'POST',
-    body: JSON.stringify({ studentId }),
+    body: JSON.stringify({ email }),
   })
 
 export const cancelSeat = (eventId, studentId) =>
@@ -57,3 +59,9 @@ export const cancelSeat = (eventId, studentId) =>
 
 export const listStudentSeats = (studentId) =>
   request(`/api/students/${encodeURIComponent(studentId)}/rsvps`)
+
+export const listRequests = (status = 'pending') =>
+  request(`/api/admin/requests?status=${encodeURIComponent(status)}`)
+
+export const decideRequest = (requestId, decision) =>
+  request(`/api/admin/requests/${encodeURIComponent(requestId)}/${decision}`, { method: 'POST' })

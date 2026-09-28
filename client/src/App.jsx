@@ -4,6 +4,7 @@ import DemoNotice from './components/DemoNotice.jsx'
 import EventsPage from './pages/EventsPage.jsx'
 import EventDetailPage from './pages/EventDetailPage.jsx'
 import MySeatsPage from './pages/MySeatsPage.jsx'
+import AdminPage from './pages/AdminPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import styles from './App.module.css'
 
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="/" element={<EventsPage />} />
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/my-seats" element={<MySeatsPage />} />
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

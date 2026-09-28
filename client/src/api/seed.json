@@ -7,14 +7,15 @@
     { "id": "org-kc", "name": "Kapampangan Culture Circle", "shortName": "KCC" }
   ],
   "students": [
-    { "id": "stu-1", "name": "Bea Manalo" },
-    { "id": "stu-2", "name": "Carlo Dizon" },
-    { "id": "stu-3", "name": "Jasmine Pineda" },
-    { "id": "stu-4", "name": "Miguel Santos" },
-    { "id": "stu-5", "name": "Andrea Lacson" },
-    { "id": "stu-6", "name": "Paolo Yap" },
-    { "id": "stu-7", "name": "Kristine Mercado" },
-    { "id": "stu-8", "name": "Rafael Tuazon" }
+    { "id": "stu-1", "name": "Bea Manalo", "email": "bea.manalo@student.hau.edu.ph", "studentNo": "20240001", "isAdmin": false },
+    { "id": "stu-2", "name": "Carlo Dizon", "email": "carlo.dizon@student.hau.edu.ph", "studentNo": "20240002", "isAdmin": false },
+    { "id": "stu-3", "name": "Jasmine Pineda", "email": "jasmine.pineda@student.hau.edu.ph", "studentNo": "20240003", "isAdmin": false },
+    { "id": "stu-4", "name": "Miguel Santos", "email": "miguel.santos@student.hau.edu.ph", "studentNo": "20240004", "isAdmin": false },
+    { "id": "stu-5", "name": "Andrea Lacson", "email": "andrea.lacson@student.hau.edu.ph", "studentNo": "20240005", "isAdmin": false },
+    { "id": "stu-6", "name": "Paolo Yap", "email": "paolo.yap@student.hau.edu.ph", "studentNo": "20240006", "isAdmin": false },
+    { "id": "stu-7", "name": "Kristine Mercado", "email": "kristine.mercado@student.hau.edu.ph", "studentNo": "20240007", "isAdmin": false },
+    { "id": "stu-8", "name": "Rafael Tuazon", "email": "rafael.tuazon@student.hau.edu.ph", "studentNo": "20240008", "isAdmin": false },
+    { "id": "stu-officer", "name": "Rhea Castro (officer)", "email": "rhea.castro@student.hau.edu.ph", "studentNo": "20230011", "isAdmin": true }
   ],
   "events": [
     {
@@ -22,9 +23,9 @@
       "orgId": "org-cs",
       "title": "Intro to Web Accessibility",
       "venue": "SJH Auditorium",
-      "startsAt": "2026-09-25T05:00:00.000Z",
+      "startsAt": "2026-10-02T05:00:00.000Z",
       "capacity": 40,
-      "seededReservations": 17,
+      "seededReservations": 16,
       "description": "A 90-minute hands-on session on making React apps usable with a keyboard and a screen reader. Bring a laptop with Node installed."
     },
     {
@@ -32,9 +33,9 @@
       "orgId": "org-dc",
       "title": "Open Parliamentary Debate Night",
       "venue": "PGN Building, Room 402",
-      "startsAt": "2026-09-26T09:00:00.000Z",
+      "startsAt": "2026-10-03T09:00:00.000Z",
       "capacity": 30,
-      "seededReservations": 30,
+      "seededReservations": 29,
       "description": "Four teams, one motion announced fifteen minutes before the first speech. Spectators welcome to stay for the adjudication."
     },
     {
@@ -42,7 +43,7 @@
       "orgId": "org-pg",
       "title": "Golden Hour Photo Walk",
       "venue": "Main Gate",
-      "startsAt": "2026-09-27T09:30:00.000Z",
+      "startsAt": "2026-10-04T09:30:00.000Z",
       "capacity": 20,
       "seededReservations": 12,
       "description": "A slow walk around campus at sunset. Phone cameras are fine. The guild lends out three cameras on a first come, first served basis."
@@ -52,9 +53,9 @@
       "orgId": "org-rc",
       "title": "Line-Follower Robot Build",
       "venue": "Engineering Lab 2",
-      "startsAt": "2026-09-29T06:00:00.000Z",
+      "startsAt": "2026-10-06T06:00:00.000Z",
       "capacity": 25,
-      "seededReservations": 24,
+      "seededReservations": 23,
       "description": "Teams of three build a small line-following robot from a kit. The club supplies the kits, so the seat limit matches the number of kits."
     },
     {
@@ -62,9 +63,9 @@
       "orgId": "org-kc",
       "title": "Kapampangan Language Circle",
       "venue": "MGN Building, Room 210",
-      "startsAt": "2026-09-30T07:00:00.000Z",
+      "startsAt": "2026-10-07T07:00:00.000Z",
       "capacity": 35,
-      "seededReservations": 9,
+      "seededReservations": 8,
       "description": "Conversation practice for beginners and heritage speakers. This week covers greetings, numbers, and ordering at the canteen."
     },
     {
@@ -72,9 +73,9 @@
       "orgId": "org-cs",
       "title": "Git Rescue Clinic",
       "venue": "CCS Laboratory 3",
-      "startsAt": "2026-10-01T06:00:00.000Z",
+      "startsAt": "2026-10-08T06:00:00.000Z",
       "capacity": 24,
-      "seededReservations": 21,
+      "seededReservations": 20,
       "description": "Bring the repository you broke. Officers help untangle merge conflicts, detached heads, and the commit that should never have been pushed."
     },
     {
@@ -82,7 +83,7 @@
       "orgId": "org-dc",
       "title": "Public Speaking Basics",
       "venue": "SJH Auditorium",
-      "startsAt": "2026-10-03T02:00:00.000Z",
+      "startsAt": "2026-10-10T02:00:00.000Z",
       "capacity": 60,
       "seededReservations": 33,
       "description": "A morning workshop on structuring a three-minute talk, with short practice rounds in pairs."
@@ -92,7 +93,7 @@
       "orgId": "org-pg",
       "title": "Editing Phone Photos",
       "venue": "PGN Building, Room 305",
-      "startsAt": "2026-10-06T08:00:00.000Z",
+      "startsAt": "2026-10-13T08:00:00.000Z",
       "capacity": 30,
       "seededReservations": 5,
       "description": "Free apps only. Cropping, light, and colour, using photos from the golden hour walk."
@@ -102,7 +103,7 @@
       "orgId": "org-rc",
       "title": "Robot Race Finals",
       "venue": "Covered Court",
-      "startsAt": "2026-10-09T07:30:00.000Z",
+      "startsAt": "2026-10-16T07:30:00.000Z",
       "capacity": 150,
       "seededReservations": 61,
       "description": "The line-follower teams race on a new track. Seats are for spectators; teams register separately with the club."
@@ -112,15 +113,20 @@
       "orgId": "org-kc",
       "title": "Sisig and Stories Night",
       "venue": "Canteen Annex",
-      "startsAt": "2026-10-10T10:00:00.000Z",
+      "startsAt": "2026-10-17T10:00:00.000Z",
       "capacity": 45,
-      "seededReservations": 44,
+      "seededReservations": 43,
       "description": "Members share family recipes and the stories behind them. Food is served, so the headcount has to be real."
     }
   ],
-  "rsvps": [
-    { "id": "rsvp-seed-1", "eventId": "evt-1", "studentId": "stu-1", "createdAt": "2026-09-16T03:12:00.000Z" },
-    { "id": "rsvp-seed-2", "eventId": "evt-5", "studentId": "stu-1", "createdAt": "2026-09-16T04:40:00.000Z" },
-    { "id": "rsvp-seed-3", "eventId": "evt-3", "studentId": "stu-2", "createdAt": "2026-09-16T05:05:00.000Z" }
+  "reservations": [
+    { "id": "rsvp-1", "eventId": "evt-1", "studentId": "stu-1", "status": "approved", "requestedAt": "2026-09-20T03:12:00.000Z", "decidedAt": "2026-09-21T01:00:00.000Z" },
+    { "id": "rsvp-2", "eventId": "evt-5", "studentId": "stu-1", "status": "approved", "requestedAt": "2026-09-20T04:40:00.000Z", "decidedAt": "2026-09-21T01:05:00.000Z" },
+    { "id": "rsvp-3", "eventId": "evt-6", "studentId": "stu-1", "status": "pending", "requestedAt": "2026-09-26T05:15:00.000Z", "decidedAt": null },
+    { "id": "rsvp-4", "eventId": "evt-3", "studentId": "stu-2", "status": "approved", "requestedAt": "2026-09-20T05:05:00.000Z", "decidedAt": "2026-09-21T01:10:00.000Z" },
+    { "id": "rsvp-5", "eventId": "evt-2", "studentId": "stu-2", "status": "pending", "requestedAt": "2026-09-26T06:20:00.000Z", "decidedAt": null },
+    { "id": "rsvp-6", "eventId": "evt-4", "studentId": "stu-3", "status": "pending", "requestedAt": "2026-09-27T02:30:00.000Z", "decidedAt": null },
+    { "id": "rsvp-7", "eventId": "evt-7", "studentId": "stu-4", "status": "pending", "requestedAt": "2026-09-27T07:45:00.000Z", "decidedAt": null },
+    { "id": "rsvp-8", "eventId": "evt-8", "studentId": "stu-5", "status": "pending", "requestedAt": "2026-09-27T09:10:00.000Z", "decidedAt": null }
   ]
 }

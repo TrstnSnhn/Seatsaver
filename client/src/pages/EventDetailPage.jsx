@@ -1,36 +1,39 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { cancelSeat, getEvent, listStudentSeats, reserveSeat, seatsLeft } from '../api'
+import { HAU_STUDENT_DOMAIN, cancelSeat, getEvent, listStudentSeats, requestSeat, seatsLeft } from '../api'
 import Button from '../components/Button.jsx'
 import SeatMeter from '../components/SeatMeter.jsx'
+import StatusBadge from '../components/StatusBadge.jsx'
 import { EmptyState, StatusMessage } from '../components/StatusMessage.jsx'
 import { useStudent } from '../context/StudentContext.jsx'
-import { longDate, timeOf, weekdayOf } from '../format.js'
+import { longDate, timeOf } from '../format.js'
 import styles from './Page.module.css'
 
 export default function EventDetailPage() {
   const { id } = useParams()
   const { student } = useStudent()
   const [event, setEvent] = useState(null)
-  const [hasSeat, setHasSeat] = useState(false)
+  const [seatStatus, setSeatStatus] = useState(null) // null, pending, or approved
   const [status, setStatus] = useState('loading') // loading | ready | notfound | error
   const [error, setError] = useState(null)
   const [attempt, setAttempt] = useState(0)
+  const [email, setEmail] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState(null) // { kind, text }
 
-  // Load the event and whether the current student already holds a seat. This
+  // Load the event and the current student's seat, if they hold one. This
   // reruns when the visitor switches student in the header.
   useEffect(() => {
     if (!student) return
     let active = true
     setStatus('loading')
     setMessage(null)
+    setEmail('')
     Promise.all([getEvent(id), listStudentSeats(student.id)])
       .then(([found, seats]) => {
         if (!active) return
         setEvent(found)
-        setHasSeat(seats.some((seat) => seat.id === found.id))
+        setSeatStatus(seats.find((seat) => seat.id === found.id)?.status ?? null)
         setStatus('ready')
       })
       .catch((caught) => {
@@ -55,14 +58,20 @@ export default function EventDetailPage() {
     }
   }
 
-  async function handleSave() {
+  // The address decides who the request belongs to. The API checks the HAU
+  // domain and the roster again before it holds anything.
+  async function handleRequest(submitEvent) {
+    submitEvent.preventDefault()
     setIsSaving(true)
     setMessage(null)
     try {
-      await reserveSeat(event.id, student.id)
-      setHasSeat(true)
+      await requestSeat(event.id, email)
+      setSeatStatus('pending')
       setEvent((current) => ({ ...current, seatsTaken: current.seatsTaken + 1 }))
-      setMessage({ kind: 'success', text: `Seat saved. See you on ${weekdayOf(event.startsAt)}.` })
+      setMessage({
+        kind: 'success',
+        text: 'Request sent. The seat is held while an org officer reviews it.',
+      })
     } catch (caught) {
       setMessage({ kind: 'error', text: caught.message })
       await refreshCount() // a 409 usually means the count moved since the page loaded
@@ -76,7 +85,7 @@ export default function EventDetailPage() {
     setMessage(null)
     try {
       await cancelSeat(event.id, student.id)
-      setHasSeat(false)
+      setSeatStatus(null)
       setEvent((current) => ({ ...current, seatsTaken: current.seatsTaken - 1 }))
       setMessage({ kind: 'success', text: 'Seat cancelled. Someone else can take it now.' })
     } catch (caught) {
@@ -140,16 +149,41 @@ export default function EventDetailPage() {
 
         <aside className={styles.panel} aria-labelledby="seat-panel-title">
           <h2 id="seat-panel-title" className={styles.panelTitle}>Seats</h2>
-          <SeatMeter taken={event.seatsTaken} capacity={event.capacity} mine={hasSeat} />
-          {hasSeat ? (
-            <Button variant="danger" onClick={handleCancel} disabled={isSaving}>
-              {isSaving ? 'Cancelling' : 'Cancel my seat'}
-            </Button>
+          <SeatMeter taken={event.seatsTaken} capacity={event.capacity} mine={Boolean(seatStatus)} />
+
+          {seatStatus ? (
+            <>
+              <StatusBadge status={seatStatus} />
+              <Button variant="danger" onClick={handleCancel} disabled={isSaving}>
+                {isSaving ? 'Cancelling' : 'Cancel my seat'}
+              </Button>
+            </>
           ) : (
-            <Button variant="primary" onClick={handleSave} disabled={isSaving || isFull}>
-              {isFull ? 'Event full' : isSaving ? 'Saving' : 'Save my seat'}
-            </Button>
+            <form className={styles.form} onSubmit={handleRequest}>
+              <label className={styles.label} htmlFor="student-email">HAU student email</label>
+              <input
+                id="student-email"
+                className={styles.input}
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                required
+                disabled={isFull}
+                placeholder={`juan.cruz${HAU_STUDENT_DOMAIN}`}
+                value={email}
+                onChange={(field) => setEmail(field.target.value)}
+                aria-describedby="student-email-hint"
+              />
+              <p id="student-email-hint" className={styles.hint}>
+                Seats are for HAU students. Only an address ending in {HAU_STUDENT_DOMAIN} that is on
+                the roster can request a seat.
+              </p>
+              <Button type="submit" variant="primary" disabled={isSaving || isFull}>
+                {isFull ? 'Event full' : isSaving ? 'Sending' : 'Request a seat'}
+              </Button>
+            </form>
           )}
+
           {message && <StatusMessage kind={message.kind}>{message.text}</StatusMessage>}
         </aside>
       </div>
