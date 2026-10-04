@@ -120,18 +120,77 @@ Headless Chrome with `--window-size=390` renders a wider viewport and crops, so 
 
 ## 3. Who wrote what
 
-> **To finish before the week 3 deadline.** This section is mine to write, and it
-> has to be accurate, so I am not filling it with a generated answer. For each
-> part I name: the file, the commit, what it does, and why it is built that way,
-> in my own words.
->
-> The parts I plan to name as my own:
->
-> - the design system in `client/src/styles.css` and the planning documents it comes from
-> - the seat meter's one-square-per-seat idea, which I specified and then corrected
-> - the order of the three refusals on a seat request, and the wording of each message
->
-> The AI-written piece I understand best and will explain in full: the transaction
-> in `requestSeat` in `server/repos.js`, the `BEGIN`, the `SELECT ... FOR UPDATE`
-> on the event row, the seat count, and the `COMMIT`, and why the lock has to come
-> before the count.
+Start with the part that costs me marks to admit: Claude Code typed most of the lines in this repository. What follows names the parts I decided, specified, corrected and tested, and then explains the one AI-written piece I understand best. Each one gives the file and the commit.
+
+### The design system
+
+**File:** `client/src/styles.css`, with the planning documents in `docs/`
+**Commit:** [`3f594b7`](https://github.com/TrstnSnhn/Seatsaver/commit/3f594b7)
+
+The tokens come from my planning documents: one committed yellow, ink on cool grey paper, Archivo in its condensed widths, zero radius, 8px spacing. I chose them before any code existed, and the rule I held to was that no component file writes a hex value or a pixel gap of its own. Each one reads `var(--color-field)` or `var(--space-2)`.
+
+That rule earned itself twice. When I added the officer screens in week 3, the new buttons, badges and tables matched the rest without a single new colour. When I wanted the reject button quieter, I changed one declaration rather than hunting for red across six files.
+
+### One square per seat
+
+**File:** `client/src/components/SeatMeter.jsx`
+**Commit:** [`3f594b7`](https://github.com/TrstnSnhn/Seatsaver/commit/3f594b7)
+
+I specified one square per seat in my planning documents and held to it in the build. A progress bar tells you a ratio, and the question a student asks is "how many seats are left". Twenty-five squares with three outlines reads as three seats, with no arithmetic.
+
+The second rule is mine too: state is a mark, never a colour alone. A taken seat is solid, an open one is an outline, and your own seat carries a yellow centre. Someone who cannot tell my yellow from my grey still reads the meter, and the count beside it repeats the same fact in words.
+
+### The order of the three refusals
+
+**File:** `server/app.js`, the `POST /api/events/:id/rsvps` handler
+**Commit:** [`1cc8dc7`](https://github.com/TrstnSnhn/Seatsaver/commit/1cc8dc7)
+
+My instructor asked for a check that a reserver is really an HAU student. One `403` would have covered every refusal. I split it into three, in this order: the domain, then the roster, then the seat rules.
+
+The order is the point. A gmail address is a mistake the student can fix by retyping, so it gets `400` and a message naming the domain. An HAU address that is not on the roster is a problem only an officer can fix, so it gets `403` and tells the student to ask one. Asking twice is `409`, and so is a full event. I wrote each message to say what to do next instead of what went wrong.
+
+### Testing the seat limit
+
+**File:** `server/repos.js`, and two curl requests fired at once
+**Commit:** [`1cc8dc7`](https://github.com/TrstnSnhn/Seatsaver/commit/1cc8dc7)
+
+I named the double-booked last seat as the main risk in my proposal, and I refused to take "the transaction handles it" on trust. With event 4 at 24 of 25 seats held, I fired two requests at the same moment and read both answers: one `201`, one `409`, and the event settled at 25 of 25.
+
+Demo mode never gets this test, and cannot pass it. Its data lives in one browser's `localStorage`, so two visitors never compete for the same seat. The seat limit is only real once PostgreSQL holds it, which is why the README says so.
+
+### Failing closed on the officer key
+
+**File:** `server/app.js`, the `requireOfficer` middleware
+**Commit:** [`898561c`](https://github.com/TrstnSnhn/Seatsaver/commit/898561c)
+
+A guard has to decide what to do when nobody configured a key. I asked for `503` on every officer route, rather than comparing an absent header with an empty string and letting the request through.
+
+The reasoning is about which mistake I would rather make. Forgetting to set `OFFICER_KEY` on a host is easy, and a guard that opens on a missing key turns that slip into an unlocked dashboard. The same thinking put the key in `sessionStorage` rather than `localStorage`: this is a shared password typed on a lab computer, and it should die when the tab closes.
+
+### The AI-written piece I understand best
+
+**File:** `server/repos.js`, the `requestSeat` function
+**Commit:** [`1cc8dc7`](https://github.com/TrstnSnhn/Seatsaver/commit/1cc8dc7)
+
+Claude Code wrote this one. Here is what it does, line by line.
+
+```sql
+BEGIN;
+SELECT id, capacity FROM events WHERE id = $1 FOR UPDATE;
+```
+
+`BEGIN` opens a transaction, so everything that follows either lands together or not at all. `FOR UPDATE` is the load-bearing part: it locks that one event row until the transaction ends. A second request for the same event stops at this line and waits. Two students pressing the button in the same second take turns instead of running side by side.
+
+Next it counts:
+
+```sql
+SELECT count(*)::int FROM reservations WHERE event_id = $1 AND status = ANY ($2);
+```
+
+The count comes after the lock, and that order decides whether the whole thing works. Counting first and locking second would let both requests read "24 of 25 taken" before either inserted, and the event would end up at 26. Because the second request waits at the lock, it counts the seat the first one just took, sees 25 of 25, and gets `full` back.
+
+Then it inserts and commits. A student whose earlier request an officer rejected is updated back to `pending` rather than inserted again, because `UNIQUE (event_id, student_id)` allows one row per student per event and I want their history kept.
+
+The rollbacks matter as much as the inserts. Every refusal path runs `ROLLBACK` before returning, and the `finally` block releases the client back to the pool. Without that release the pool runs out of connections after a few refused requests, and the whole API stops answering.
+
+What I take from reading it: the lock is not about speed, it is about order. The database is the only place that can put two simultaneous requests in a line, which is why this rule lives in SQL and not in my JavaScript.
