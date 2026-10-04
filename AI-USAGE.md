@@ -74,7 +74,7 @@ Started in week 1 and kept up since.
 
 **Kept and changed:** I asked for two things specifically. The key goes in `sessionStorage` rather than `localStorage`, because this is a shared password typed on a lab computer and it should die with the tab. And a server with no key configured answers `503` on every officer route rather than letting everything through, so forgetting the key closes the door instead of removing it.
 
-**Commit:** COMMIT_WEEK3
+**Commit:** [`898561c`](https://github.com/TrstnSnhn/Seatsaver/commit/898561c)
 
 ### 2026-10-04, Claude Code: the org dashboard
 
@@ -84,7 +84,7 @@ Started in week 1 and kept up since.
 
 **Kept and changed:** I asked for the `PATCH` to write only the fields that arrive, so editing a venue cannot overwrite a description with a stale copy from the form. I also asked for the overbooking refusal: lowering a seat limit below the seats already held returns `409`, because no later request could undo an event with more students than chairs.
 
-**Commit:** COMMIT_WEEK3
+**Commit:** [`898561c`](https://github.com/TrstnSnhn/Seatsaver/commit/898561c)
 
 ## 2. Where the AI got it wrong
 
@@ -110,7 +110,7 @@ A validation test used my own `@student.hau.edu.ph` address as its example. The 
 
 The officer form put `flex: 1 1 200px` on every field, which is right for the fields sharing a row and wrong for the ones stacked in the column: a column child with `flex-grow: 1` stretches to fill the form's height, so the description field pushed the submit button to the bottom of a tall empty box. I caught it in a screenshot rather than in the markup, and scoped the rule to `.row .field`.
 
-**Commit:** COMMIT_WEEK3
+**Commit:** [`898561c`](https://github.com/TrstnSnhn/Seatsaver/commit/898561c)
 
 ### The first mobile screenshots were wrong
 
