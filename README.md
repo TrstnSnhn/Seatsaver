@@ -7,8 +7,8 @@ Built with heavy assistance from Claude Code, Anthropic's CLI coding tool. What 
 SeatSaver lets a student-org officer at Holy Angel University post an event with a fixed number of seats, and lets an HAU student request one of those seats with their school email. An officer approves or rejects each request from a queue, so organizers know the real headcount before the day instead of reconciling a Google Form with a Messenger poll.
 
 **Live site:** https://trstnsnhn.github.io/Seatsaver/
-**API:** Express and PostgreSQL, running against a Neon database. Not yet deployed to a public host
-**Demo video:** coming in week 3
+**API:** Express and PostgreSQL on Neon, run locally with the steps below. GitHub Pages serves static files only, so it hosts the client and cannot run the server
+**Demo video:** coming with the week 3 presentation
 
 > **The deployed site runs in demo mode.** You use the real interface while your browser simulates the backend, so the site works without a server. Run the API yourself to see the database path. See [Demo mode](#demo-mode).
 
@@ -16,7 +16,9 @@ SeatSaver lets a student-org officer at Holy Angel University post an event with
 
 ## Status
 
-Feature complete, week 3 of 3. The Express API and the PostgreSQL schema run on Neon. Students request seats with their HAU address, officers approve or reject those requests, and officers post, edit and delete events from their own dashboard. Every officer route sits behind a shared key held in the server environment. What remains is hosting the API so the live site can leave demo mode, and the demo video.
+Feature complete, week 3 of 3. The Express API and the PostgreSQL schema run on Neon. Students request seats with their HAU address, officers approve or reject those requests, and officers post, edit and delete events from their own dashboard. Every officer route sits behind a shared key held in the server environment.
+
+The deployed site runs the client in demo mode, by choice. GitHub Pages serves static files, so the Express API runs on your own machine with the setup steps below, against your own database. Running both halves takes about five minutes from a clean clone.
 
 ## What it does
 
@@ -47,7 +49,6 @@ Feature complete, week 3 of 3. The Express API and the PostgreSQL schema run on 
 
 **Still to do**
 
-- Host the API so the live site can leave demo mode
 - Record the demo video
 
 ## Setup and installation
@@ -217,6 +218,10 @@ The client runs two ways, chosen by `VITE_USE_MOCK_API` at build time.
 
 Both files export the same fifteen functions and apply the same rules, including the HAU domain check, so switching to the live API needs no screen changes. Demo mode stores everything under `seatsaver:db:v2`. Clear site data to start again from the sample events.
 
+**What demo mode cannot do.** Its data lives in one browser, so two visitors never compete for the same seat, and the seat limit never gets the test the database gives it. The officer key opens the dashboard on any non-empty value, because the page has no server to check it against. Both rules are real only against the API, which is what the setup steps above are for.
+
+**Why the deployed site uses it.** GitHub Pages serves static files, so it publishes the React build and cannot run Express. Demo mode lets the live link show every screen, the officer dashboard included, with no server behind it. Moving to a host that runs Node needs one build variable, `VITE_USE_MOCK_API=false`, and no change to any screen.
+
 ## Project structure
 
     client/
@@ -253,7 +258,7 @@ Both files export the same fifteen functions and apply the same rules, including
 
 ## Known issues and next steps
 
-- The API runs on my machine, so the deployed site stays in demo mode until I host it
+- The deployed site runs in demo mode. GitHub Pages cannot run an Express server, so the API runs locally. Putting it on a host that runs Node would let the live link talk to the real database, and the only change on the client side is `VITE_USE_MOCK_API=false`
 - One shared officer key covers every org, so the Robotics Club officer can edit a Debate Circle event. Per-officer accounts and per-org ownership are the next step, and the key is the smallest honest version of the lock
 - A rejected request frees the seat and then vanishes from the student's My seats list, with no email and no notice. The student can only tell by opening the event again, which is the first thing I would fix
 - The seat count beside each request in the officer queue is a snapshot from when the list loaded. The decision itself is still safe, because the database checks the row when the officer presses the button
