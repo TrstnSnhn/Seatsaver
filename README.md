@@ -8,9 +8,9 @@ SeatSaver lets a student-org officer at Holy Angel University post an event with
 
 **Live site:** https://trstnsnhn.github.io/Seatsaver/
 **API:** Express and PostgreSQL on Neon, run locally with the steps below. GitHub Pages serves static files only, so it hosts the client and cannot run the server
-**Demo video:** coming with the week 3 presentation
+**Demo video:** part of the week 3 presentation
 
-> **The deployed site runs in demo mode.** You use the real interface while your browser simulates the backend, so the site works without a server. Run the API yourself to see the database path. See [Demo mode](#demo-mode).
+> **The deployed site runs on sample data.** Every screen is the real interface, and your browser holds the data, so the link works with no server behind it. Run the API with the steps below to put the same screens on PostgreSQL. See [Sample data](#sample-data).
 
 ![The officer request queue: four requests, each with the student, the event, the seat count, and Approve and Reject buttons](docs/assets/screenshot-admin-requests.png)
 
@@ -18,7 +18,7 @@ SeatSaver lets a student-org officer at Holy Angel University post an event with
 
 Feature complete, week 3 of 3. The Express API and the PostgreSQL schema run on Neon. Students request seats with their HAU address, officers approve or reject those requests, and officers post, edit and delete events from their own dashboard. Every officer route sits behind a shared key held in the server environment.
 
-The deployed site runs the client in demo mode, by choice. GitHub Pages serves static files, so the Express API runs on your own machine with the setup steps below, against your own database. Running both halves takes about five minutes from a clean clone.
+The deployed site runs the client on sample data, by choice. GitHub Pages serves static files, so the Express API runs on your own machine with the setup steps below, against your own database. Running both halves takes about five minutes from a clean clone.
 
 ## What it does
 
@@ -47,9 +47,9 @@ The deployed site runs the client in demo mode, by choice. GitHub Pages serves s
 - A seat limit that holds under concurrent requests, through `SELECT ... FOR UPDATE` on the event row inside a transaction
 - An email that ends in `@student.hau.edu.ph`, through a `CHECK` constraint on `students.email`
 
-**Still to do**
+**Next**
 
-- Record the demo video
+- Record the demo video for the week 3 presentation
 
 ## Setup and installation
 
@@ -130,7 +130,7 @@ Keep these out of git. Each folder's `.env.example` lists them with placeholder 
 | `OFFICER_KEY` | server | a long random string | the shared password for every officer route. Unset means every one of them answers `503` |
 | `NODE_ENV` | server | `development` | set it to `production` on a host |
 | `PORT` | server | set by the host | do not set it yourself |
-| `VITE_USE_MOCK_API` | client, at build time | `false` | only `false` turns demo mode off; unset means on |
+| `VITE_USE_MOCK_API` | client, at build time | `false` | only `false` calls the API; unset keeps the browser-only backend |
 | `VITE_API_BASE_URL` | client, at build time | `http://localhost:3000` | the API's public URL, no trailing slash |
 
 Vite copies each `VITE_` value into the built JavaScript, where anyone can read it. Never put a key, a password, or a connection string in one.
@@ -148,7 +148,7 @@ Vite copies each `VITE_` value into the built JavaScript, where anyone can read 
 **As an officer**
 
 1. Switch the header picker to Rhea Castro, the seeded officer. **Requests** and **Manage** appear in the navigation.
-2. Open either one and type the officer key, the value of `OFFICER_KEY` on your server. In demo mode any key opens the screens, because there is no server holding a secret.
+2. Open either one and type the officer key, the value of `OFFICER_KEY` on your server. On the sample-data build any key opens the screens, because no server is there to hold a secret.
 3. Under **Requests**, choose **Approve** to keep a seat held or **Reject** to free it. The row leaves the waiting tab and appears under approved or rejected.
 4. Under **Manage**, post an event with the form at the top, or use **Edit**, **Who is coming** and **Delete** on any event. The bottom of the page ranks events by how many students asked.
 5. **Forget my key** at the top clears the key from this tab.
@@ -192,7 +192,7 @@ Without the header these answer `401`. With no `OFFICER_KEY` set on the server t
 | `409` | the student already has a request for this event, or the event is full |
 | `201` | the request is recorded as `pending` and the seat is held |
 
-Both API files on the client export the same fifteen functions, so demo mode and the real API stay interchangeable.
+Both API files on the client export the same fifteen functions, so the two backends stay interchangeable.
 
 ## Database
 
@@ -207,7 +207,7 @@ Four tables. `server/db/schema.sql` creates them and `server/db/seed.sql` fills 
 
 Seats held are counted, never stored: `count(*)` over reservations whose status is `pending` or `approved`. There is no counter to fall out of step with the rows.
 
-## Demo mode
+## Sample data
 
 The client runs two ways, chosen by `VITE_USE_MOCK_API` at build time.
 
@@ -216,11 +216,11 @@ The client runs two ways, chosen by `VITE_USE_MOCK_API` at build time.
 | unset, or `true` | `client/src/api/mockApi.js` answers from `localStorage`, starting from `seed.json`. No server, no database, nothing shared between visitors |
 | `false` | `client/src/api/httpApi.js` calls the Express API at `VITE_API_BASE_URL` |
 
-Both files export the same fifteen functions and apply the same rules, including the HAU domain check, so switching to the live API needs no screen changes. Demo mode stores everything under `seatsaver:db:v2`. Clear site data to start again from the sample events.
+Both files export the same fifteen functions and apply the same rules, including the HAU domain check, so switching to the live API needs no screen changes. The browser-only backend stores everything under `seatsaver:db:v2`. Clear site data to start again from the sample events.
 
-**What demo mode cannot do.** Its data lives in one browser, so two visitors never compete for the same seat, and the seat limit never gets the test the database gives it. The officer key opens the dashboard on any non-empty value, because the page has no server to check it against. Both rules are real only against the API, which is what the setup steps above are for.
+**What the browser-only backend cannot do.** Its data lives in one browser, so two visitors never compete for the same seat, and the seat limit never gets the test the database gives it. The officer key opens the dashboard on any non-empty value, because no server is there to check it. Both rules are real against the API, which is what the setup steps above are for.
 
-**Why the deployed site uses it.** GitHub Pages serves static files, so it publishes the React build and cannot run Express. Demo mode lets the live link show every screen, the officer dashboard included, with no server behind it. Moving to a host that runs Node needs one build variable, `VITE_USE_MOCK_API=false`, and no change to any screen.
+**Why the deployed site uses it.** GitHub Pages serves static files, so it publishes the React build and cannot run Express. Sample data lets the live link show every screen, the officer dashboard included, with no server behind it. Moving to a host that runs Node needs one build variable, `VITE_USE_MOCK_API=false`, and no change to any screen.
 
 ## Project structure
 
@@ -258,7 +258,7 @@ Both files export the same fifteen functions and apply the same rules, including
 
 ## Known issues and next steps
 
-- The deployed site runs in demo mode. GitHub Pages cannot run an Express server, so the API runs locally. Putting it on a host that runs Node would let the live link talk to the real database, and the only change on the client side is `VITE_USE_MOCK_API=false`
+- The deployed site runs on sample data. GitHub Pages cannot run an Express server, so the API runs locally. Putting it on a host that runs Node would let the live link talk to the real database, and the only change on the client side is `VITE_USE_MOCK_API=false`
 - One shared officer key covers every org, so the Robotics Club officer can edit a Debate Circle event. Per-officer accounts and per-org ownership are the next step, and the key is the smallest honest version of the lock
 - A rejected request frees the seat and then vanishes from the student's My seats list, with no email and no notice. The student can only tell by opening the event again, which is the first thing I would fix
 - The seat count beside each request in the officer queue is a snapshot from when the list loaded. The decision itself is still safe, because the database checks the row when the officer presses the button

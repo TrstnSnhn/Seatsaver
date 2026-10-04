@@ -16,7 +16,7 @@ needs.
 
 **Hours.** About 11.
 
-**Next.** Deploy the API so the live site can leave demo mode, then build the org dashboard for creating events.
+**Next.** Build the org dashboard for creating events, and put a key on the officer routes.
 
 ---
 
