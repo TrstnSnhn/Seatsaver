@@ -1,0 +1,160 @@
+.section {
+  margin: var(--space-4) 0 var(--space-2);
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--color-ink);
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: var(--font-size-heading);
+  line-height: 1;
+  word-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-ink);
+}
+
+.editing { list-style: none; }
+
+.what { min-width: 0; }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  margin-bottom: 6px;
+  padding: 0 var(--space-1);
+  border: 1.5px solid var(--color-ink);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rowTitle {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.detail {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  overflow-wrap: anywhere;
+}
+
+.seats {
+  margin-top: 6px;
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: var(--font-size-small);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Delete is the quiet one until you reach for it. */
+.actions .delete {
+  background: transparent;
+  border-color: var(--color-alert);
+  color: var(--color-alert);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .actions .delete:hover:not(:disabled) {
+    background: var(--color-alert);
+    color: var(--color-surface);
+  }
+}
+
+/* The attendee list opens underneath its event, spanning both columns. */
+.attendees {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: var(--space-1) 0 0;
+  padding: var(--space-2) 0 0;
+  border-top: 1px solid var(--color-g200);
+  list-style: none;
+  counter-reset: attendee;
+}
+
+.attendee {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  counter-increment: attendee;
+}
+
+.attendee::before {
+  content: counter(attendee);
+  min-width: 22px;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-small);
+}
+
+.attendeeName { font-weight: 700; }
+
+/* Five columns do not fit a phone. The table scrolls sideways on its own
+   rather than pushing the whole page wider. */
+.scroller {
+  overflow-x: auto;
+  margin-top: var(--space-2);
+}
+
+.report {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.report th {
+  padding: 0 var(--space-1) 6px 0;
+  border-bottom: 2px solid var(--color-ink);
+  color: var(--color-muted);
+  text-align: left;
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: var(--font-size-small);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.report td {
+  padding: var(--space-1) var(--space-1) var(--space-1) 0;
+  border-bottom: 1px solid var(--color-g200);
+  vertical-align: top;
+}
+
+.number { text-align: right; }
+
+@media (max-width: 767px) {
+  .row { grid-template-columns: minmax(0, 1fr); }
+  .actions { flex-direction: row; flex-wrap: wrap; }
+  .actions > * { flex: 1; }
+  .report { font-size: var(--font-size-small); }
+}

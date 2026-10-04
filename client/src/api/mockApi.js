@@ -12,6 +12,7 @@ import {
   normaliseStudentEmail,
   reservationProblem,
 } from './rules.js'
+import { readOfficerKey } from './officerKey.js'
 
 const KEY = 'seatsaver:db:v2'
 
@@ -209,6 +210,100 @@ export async function listRequests(status = 'pending') {
       }
     })
     .sort((a, b) => a.requestedAt.localeCompare(b.requestedAt))
+}
+
+// Officer routes.
+//
+// Demo mode has no server to hold a secret, so any non-empty key opens the
+// dashboard here. The real API checks the key against its own environment, and
+// that is the check that matters.
+export async function checkOfficerKey() {
+  await delay()
+  if (!readOfficerKey()) throw new ApiError('That officer key is wrong.', 401)
+  return { ok: true }
+}
+
+export async function createEvent(orgId, fields) {
+  await delay()
+  const db = readDb()
+  if (!db.orgs.some((org) => org.id === orgId)) throw new ApiError('No such org', 404)
+
+  const created = { id: crypto.randomUUID(), orgId, description: '', ...fields }
+  const events = [...db.events, created]
+  writeDb({ ...db, events })
+  return withDetails({ ...db, events }, created)
+}
+
+export async function updateEvent(eventId, fields) {
+  await delay()
+  const db = readDb()
+  const current = withDetails(db, findEvent(db, eventId))
+
+  if (fields.capacity !== undefined && fields.capacity < current.seatsTaken) {
+    throw new ApiError(
+      `${current.seatsTaken} seats are already held. Reject some requests before lowering the limit.`,
+      409
+    )
+  }
+
+  const events = db.events.map((event) => (event.id === eventId ? { ...event, ...fields } : event))
+  writeDb({ ...db, events })
+  return withDetails({ ...db, events }, events.find((event) => event.id === eventId))
+}
+
+export async function deleteEvent(eventId) {
+  await delay()
+  const db = readDb()
+  findEvent(db, eventId)
+  writeDb({
+    ...db,
+    events: db.events.filter((event) => event.id !== eventId),
+    // The database cascades; here the rows are removed by hand.
+    reservations: db.reservations.filter((reservation) => reservation.eventId !== eventId),
+  })
+  return null
+}
+
+export async function listAttendees(eventId) {
+  await delay()
+  const db = readDb()
+  return db.reservations
+    .filter((reservation) => reservation.eventId === eventId && holds(reservation))
+    .map((reservation) => {
+      const student = db.students.find((candidate) => candidate.id === reservation.studentId)
+      return {
+        id: reservation.studentId,
+        name: student?.name ?? 'Guest student',
+        email: student?.email ?? '',
+        studentNo: student?.studentNo ?? '',
+        status: reservation.status,
+        requestedAt: reservation.requestedAt,
+      }
+    })
+    .sort((a, b) => a.status.localeCompare(b.status) || a.name.localeCompare(b.name))
+}
+
+export async function listReport(limit = 10) {
+  await delay()
+  const db = readDb()
+  return db.events
+    .map((event) => {
+      const mine = db.reservations.filter((reservation) => reservation.eventId === event.id)
+      const detailed = withDetails(db, event)
+      return {
+        id: event.id,
+        title: event.title,
+        venue: event.venue,
+        startsAt: event.startsAt,
+        capacity: event.capacity,
+        orgName: detailed.orgName,
+        requests: mine.length,
+        seatsTaken: detailed.seatsTaken,
+        rejected: mine.filter((reservation) => reservation.status === 'rejected').length,
+      }
+    })
+    .sort((a, b) => b.requests - a.requests || a.startsAt.localeCompare(b.startsAt))
+    .slice(0, limit)
 }
 
 export async function decideRequest(requestId, decision) {

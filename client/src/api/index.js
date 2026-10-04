@@ -27,6 +27,13 @@ export const {
   listStudentSeats,
   listRequests,
   decideRequest,
+  checkOfficerKey,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  listAttendees,
+  listReport,
 } = implementation
 
 export { seatsLeft, normaliseStudentEmail, STATUS_LABELS, HAU_STUDENT_DOMAIN } from './rules.js'
+export { readOfficerKey, writeOfficerKey } from './officerKey.js'

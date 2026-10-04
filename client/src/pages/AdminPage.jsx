@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { decideRequest, listRequests, seatsLeft } from '../api'
 import Button from '../components/Button.jsx'
+import OfficerGate from '../components/OfficerGate.jsx'
 import StatusBadge from '../components/StatusBadge.jsx'
 import { EmptyState, StatusMessage } from '../components/StatusMessage.jsx'
-import { useStudent } from '../context/StudentContext.jsx'
 import { longDate, timeOf } from '../format.js'
 import styles from './Admin.module.css'
 import page from './Page.module.css'
@@ -22,7 +22,14 @@ const EMPTY_HINTS = {
 }
 
 export default function AdminPage() {
-  const { student } = useStudent()
+  return (
+    <OfficerGate title="Requests">
+      <Queue />
+    </OfficerGate>
+  )
+}
+
+function Queue() {
   const [tab, setTab] = useState('pending')
   const [requests, setRequests] = useState([])
   const [status, setStatus] = useState('loading') // loading | ready | error
@@ -31,10 +38,7 @@ export default function AdminPage() {
   const [decidingId, setDecidingId] = useState(null)
   const [message, setMessage] = useState(null) // { kind, text }
 
-  const isAdmin = Boolean(student?.isAdmin)
-
   useEffect(() => {
-    if (!isAdmin) return
     let active = true
     setStatus('loading')
     listRequests(tab)
@@ -51,7 +55,7 @@ export default function AdminPage() {
     return () => {
       active = false
     }
-  }, [isAdmin, tab, attempt])
+  }, [tab, attempt])
 
   async function decide(request, decision) {
     setDecidingId(request.id)
@@ -70,18 +74,6 @@ export default function AdminPage() {
     } finally {
       setDecidingId(null)
     }
-  }
-
-  // The officer role comes from the student record, so a visitor who types the
-  // address still sees why the page is closed instead of an empty screen.
-  if (!isAdmin) {
-    return (
-      <EmptyState
-        title="Officers only"
-        hint="Switch to an officer account in the header to review reservation requests."
-        action={<Button as={Link} to="/" variant="ghost">Back to events</Button>}
-      />
-    )
   }
 
   return (

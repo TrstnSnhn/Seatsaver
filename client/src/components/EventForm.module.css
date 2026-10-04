@@ -1,0 +1,66 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-ink);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Only the fields sharing a row stretch. A field directly in the column would
+   grow to fill the form's height instead, which left a gap under the textarea. */
+.row .field { flex: 1 1 200px; }
+
+.row .narrow { flex: 0 0 110px; }
+
+.label {
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: var(--font-size-small);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.input,
+.area {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-1);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-ink);
+  border-radius: var(--radius);
+}
+
+.area {
+  padding: var(--space-1);
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.input:disabled {
+  background: var(--color-g100);
+  color: var(--color-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+@media (max-width: 767px) {
+  .row .narrow { flex: 1 1 110px; }
+}

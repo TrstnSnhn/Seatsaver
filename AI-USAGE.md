@@ -66,6 +66,26 @@ Started in week 1 and kept up since.
 
 **Commit:** [`1cc8dc7`](https://github.com/TrstnSnhn/Seatsaver/commit/1cc8dc7)
 
+### 2026-10-04, Claude Code: the officer key
+
+**Asked for:** a lock on the officer routes. Until this week `is_admin` lived in the database and the client simply trusted it, so anyone who found the API could approve their own request.
+
+**Got back:** a `requireOfficer` middleware reading `OFFICER_KEY` from the server environment, an `x-officer-key` header on every request from the client, and an `OfficerGate` component that asks for the key once per tab.
+
+**Kept and changed:** I asked for two things specifically. The key goes in `sessionStorage` rather than `localStorage`, because this is a shared password typed on a lab computer and it should die with the tab. And a server with no key configured answers `503` on every officer route rather than letting everything through, so forgetting the key closes the door instead of removing it.
+
+**Commit:** COMMIT_WEEK3
+
+### 2026-10-04, Claude Code: the org dashboard
+
+**Asked for:** the last piece of my proposal. Officers post an event, edit it, delete it, and read the attendee list, plus a report of the most-requested events.
+
+**Got back:** `POST /api/orgs/:orgId/events`, `PATCH /api/events/:id`, `DELETE /api/events/:id`, `GET /api/events/:id/attendees`, `GET /api/admin/report`, and the Manage screen with one form used for both posting and editing.
+
+**Kept and changed:** I asked for the `PATCH` to write only the fields that arrive, so editing a venue cannot overwrite a description with a stale copy from the form. I also asked for the overbooking refusal: lowering a seat limit below the seats already held returns `409`, because no later request could undo an event with more students than chairs.
+
+**Commit:** COMMIT_WEEK3
+
 ## 2. Where the AI got it wrong
 
 ### The seats query dropped the column the route reported
@@ -85,6 +105,12 @@ While replacing the class template's sample API, `sightingsRepo.js` was deleted 
 A validation test used my own `@student.hau.edu.ph` address as its example. The finals rules say no name, student number, or email in the public project repository, and nothing in the generated code knew that. I caught it in the scan I run before every push and replaced it with a sample address. This is the kind of mistake that no amount of green tests catches.
 
 **Commit:** [`1cc8dc7`](https://github.com/TrstnSnhn/Seatsaver/commit/1cc8dc7)
+
+### The event form grew a gap under the textarea
+
+The officer form put `flex: 1 1 200px` on every field, which is right for the fields sharing a row and wrong for the ones stacked in the column: a column child with `flex-grow: 1` stretches to fill the form's height, so the description field pushed the submit button to the bottom of a tall empty box. I caught it in a screenshot rather than in the markup, and scoped the rule to `.row .field`.
+
+**Commit:** COMMIT_WEEK3
 
 ### The first mobile screenshots were wrong
 

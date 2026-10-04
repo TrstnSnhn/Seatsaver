@@ -16,7 +16,7 @@ SeatSaver lets a student-org officer at Holy Angel University post an event with
 
 ## Status
 
-End of week 2 of 3. The Express API and the PostgreSQL schema are live on Neon. Two rules run in the database: only an address on the HAU student roster can request a seat, and the seat limit holds under two simultaneous requests. Officers answer requests in a queue. Week 3 adds the org dashboard for creating events, the deployed API, and the demo video.
+Feature complete, week 3 of 3. The Express API and the PostgreSQL schema run on Neon. Students request seats with their HAU address, officers approve or reject those requests, and officers post, edit and delete events from their own dashboard. Every officer route sits behind a shared key held in the server environment. What remains is hosting the API so the live site can leave demo mode, and the demo video.
 
 ## What it does
 
@@ -33,7 +33,10 @@ End of week 2 of 3. The Express API and the PostgreSQL schema are live on Neon. 
 - **Requests** lists every waiting request with the student, the student number, the event, and the seat count at that moment
 - **Approve** keeps the seat held. **Reject** frees it for someone else
 - Tabs switch between waiting, approved, and rejected
-- Students who are not officers never see the link, and typing `/admin` shows them why the page is closed
+- **Manage** posts a new event, edits one in place, and deletes one. Each event opens its attendee list, with the student number beside every name
+- Lowering a seat limit below the seats already held is refused with `409`, because no later request could undo an overbooked event
+- **Most requested** ranks events by how many students asked, answered or not
+- Both screens ask for the **officer key** before they open. The key lives in the server environment, travels in the `x-officer-key` header, and is kept in `sessionStorage` for that tab only
 
 **Rules the database enforces**
 
@@ -42,11 +45,10 @@ End of week 2 of 3. The Express API and the PostgreSQL schema are live on Neon. 
 - A seat limit that holds under concurrent requests, through `SELECT ... FOR UPDATE` on the event row inside a transaction
 - An email that ends in `@student.hau.edu.ph`, through a `CHECK` constraint on `students.email`
 
-**Planned for week 3**
+**Still to do**
 
-- An **Org dashboard** where officers create, edit, and delete events
-- The API deployed to a public host so the live site can leave demo mode
-- A report of the most-requested events
+- Host the API so the live site can leave demo mode
+- Record the demo video
 
 ## Setup and installation
 
@@ -107,7 +109,7 @@ You should see the Events screen with ten sample events, and no demo-mode notice
 
 **Tests.** Both suites need no browser and no database:
 
-    cd server && npm test     # 4 tests, node:test
+    cd server && npm test     # 8 tests, node:test
     cd client && npm test     # 6 tests, node:test
 
 **Production build**, the same one GitHub Pages serves:
@@ -124,6 +126,7 @@ Keep these out of git. Each folder's `.env.example` lists them with placeholder 
 | --- | --- | --- | --- |
 | `DATABASE_URL` | server | `postgresql://user:pass@host.neon.tech/seatsaver?sslmode=require` | PostgreSQL connection string. Contains a password |
 | `CORS_ORIGINS` | server | `http://localhost:5173` | comma-separated origins allowed to call the API |
+| `OFFICER_KEY` | server | a long random string | the shared password for every officer route. Unset means every one of them answers `503` |
 | `NODE_ENV` | server | `development` | set it to `production` on a host |
 | `PORT` | server | set by the host | do not set it yourself |
 | `VITE_USE_MOCK_API` | client, at build time | `false` | only `false` turns demo mode off; unset means on |
@@ -143,9 +146,11 @@ Vite copies each `VITE_` value into the built JavaScript, where anyone can read 
 
 **As an officer**
 
-1. Switch the header picker to Rhea Castro, the seeded officer.
-2. A **Requests** link appears in the navigation. Open it.
-3. Choose **Approve** to keep a seat held, or **Reject** to free it. The row leaves the waiting tab and appears under approved or rejected.
+1. Switch the header picker to Rhea Castro, the seeded officer. **Requests** and **Manage** appear in the navigation.
+2. Open either one and type the officer key, the value of `OFFICER_KEY` on your server. In demo mode any key opens the screens, because there is no server holding a secret.
+3. Under **Requests**, choose **Approve** to keep a seat held or **Reject** to free it. The row leaves the waiting tab and appears under approved or rejected.
+4. Under **Manage**, post an event with the form at the top, or use **Edit**, **Who is coming** and **Delete** on any event. The bottom of the page ranks events by how many students asked.
+5. **Forget my key** at the top clears the key from this tab.
 
 ## API
 
@@ -160,9 +165,22 @@ Vite copies each `VITE_` value into the built JavaScript, where anyone can read 
 | `POST` | `/api/events/:id/rsvps` | request a seat, body `{ "email": "bea.manalo@student.hau.edu.ph" }` |
 | `DELETE` | `/api/events/:id/rsvps/:studentId` | cancel a reservation; `204`, or `404` when there is none |
 | `GET` | `/api/students/:id/rsvps` | the seats a student holds, each with its status |
+
+Officer routes, all of them behind the `x-officer-key` header:
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| `GET` | `/api/admin/session` | says whether the key the browser holds is the right one |
 | `GET` | `/api/admin/requests?status=pending` | the officer queue, by status |
 | `POST` | `/api/admin/requests/:id/approve` | approve a waiting request; `404` once it is answered |
 | `POST` | `/api/admin/requests/:id/reject` | reject a waiting request and free the seat |
+| `POST` | `/api/orgs/:orgId/events` | post an event; `400` on a bad field, `404` on an unknown org |
+| `PATCH` | `/api/events/:id` | edit the fields you send; `409` when the new seat limit is below the seats held |
+| `DELETE` | `/api/events/:id` | delete an event and, by cascade, its reservations |
+| `GET` | `/api/events/:id/attendees` | who holds a seat, with their student number and status |
+| `GET` | `/api/admin/report?limit=10` | events ranked by how many students requested a seat |
+
+Without the header these answer `401`. With no `OFFICER_KEY` set on the server they answer `503`, so a forgotten key closes the door rather than leaving it open.
 
 `POST /api/events/:id/rsvps` answers in this order:
 
@@ -173,7 +191,7 @@ Vite copies each `VITE_` value into the built JavaScript, where anyone can read 
 | `409` | the student already has a request for this event, or the event is full |
 | `201` | the request is recorded as `pending` and the seat is held |
 
-Planned with the org dashboard: `POST /api/orgs/:orgId/events`, `PATCH /api/events/:id`, `DELETE /api/events/:id`.
+Both API files on the client export the same fifteen functions, so demo mode and the real API stay interchangeable.
 
 ## Database
 
@@ -197,14 +215,14 @@ The client runs two ways, chosen by `VITE_USE_MOCK_API` at build time.
 | unset, or `true` | `client/src/api/mockApi.js` answers from `localStorage`, starting from `seed.json`. No server, no database, nothing shared between visitors |
 | `false` | `client/src/api/httpApi.js` calls the Express API at `VITE_API_BASE_URL` |
 
-Both files export the same nine functions and apply the same rules, including the HAU domain check, so switching to the live API needs no screen changes. Demo mode stores everything under `seatsaver:db:v2`. Clear site data to start again from the sample events.
+Both files export the same fifteen functions and apply the same rules, including the HAU domain check, so switching to the live API needs no screen changes. Demo mode stores everything under `seatsaver:db:v2`. Clear site data to start again from the sample events.
 
 ## Project structure
 
     client/
       src/api/           mockApi.js and httpApi.js (same functions), rules.js, seed.json
-      src/pages/         EventsPage, EventDetailPage, MySeatsPage, AdminPage, NotFoundPage
-      src/components/    Header, EventCard, SeatMeter, StatusBadge, FilterBar, Button, StatusMessage
+      src/pages/         EventsPage, EventDetailPage, MySeatsPage, AdminPage, ManagePage, NotFoundPage
+      src/components/    Header, EventCard, SeatMeter, StatusBadge, EventForm, OfficerGate, FilterBar, Button, StatusMessage
       src/context/       StudentContext: the selected student, shared across pages
       src/styles.css     design tokens as CSS custom properties
     server/
@@ -229,12 +247,16 @@ Both files export the same nine functions and apply the same rules, including th
 
 ![The officer queue on a phone: each request stacks the student, the event, and the Approve and Reject buttons](docs/assets/screenshot-admin-phone.png)
 
+**Manage events**, the officer dashboard:
+
+![The manage screen: a form for posting an event above a list of events, each with Edit, Who is coming, and Delete](docs/assets/screenshot-manage.png)
+
 ## Known issues and next steps
 
-- The API runs on my machine, so the deployed site stays in demo mode until I host it in week 3
-- Officers are marked by `is_admin` in the database and the client trusts that flag. There is no login, so anyone who can reach the API can call the admin routes. Week 3 adds a shared officer key at minimum
+- The API runs on my machine, so the deployed site stays in demo mode until I host it
+- One shared officer key covers every org, so the Robotics Club officer can edit a Debate Circle event. Per-officer accounts and per-org ownership are the next step, and the key is the smallest honest version of the lock
 - A rejected request frees the seat and then vanishes from the student's My seats list, with no email and no notice. The student can only tell by opening the event again, which is the first thing I would fix
-- The org dashboard for creating and editing events is not built
+- The seat count beside each request in the officer queue is a snapshot from when the list loaded. The decision itself is still safe, because the database checks the row when the officer presses the button
 - `npm test` covers the pure rules. The SQL path is checked by hand with curl, and a seed-and-query test would catch more
 
 ## Licence

@@ -1,0 +1,78 @@
+.gate {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 460px;
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-ink);
+}
+
+.title {
+  font-stretch: 62%;
+  font-weight: 900;
+  font-size: var(--font-size-heading);
+  line-height: 1;
+  word-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hint {
+  margin-bottom: var(--space-1);
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+}
+
+.label {
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: var(--font-size-small);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.input {
+  min-height: 44px;
+  padding: 0 var(--space-1);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-ink);
+  border-radius: var(--radius);
+}
+
+/* The open state: a thin strip saying which hat you are wearing. */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-1);
+  background: var(--color-field);
+  border: 1.5px solid var(--color-ink);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.signOut {
+  min-height: 24px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .signOut:hover { color: var(--color-ink); }
+}

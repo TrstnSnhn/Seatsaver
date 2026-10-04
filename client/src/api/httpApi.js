@@ -4,13 +4,20 @@
 // with the same return shapes.
 
 import { ApiError } from './rules.js'
+import { readOfficerKey } from './officerKey.js'
 
 const BASE = import.meta.env.VITE_API_BASE_URL || ''
 
+// Every officer route reads this header. Student routes ignore it, so sending
+// it everywhere costs nothing and keeps one request function.
 async function request(path, options) {
   const response = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-officer-key': readOfficerKey(),
+      ...options?.headers,
+    },
   })
 
   if (!response.ok) {
@@ -65,3 +72,27 @@ export const listRequests = (status = 'pending') =>
 
 export const decideRequest = (requestId, decision) =>
   request(`/api/admin/requests/${encodeURIComponent(requestId)}/${decision}`, { method: 'POST' })
+
+// Officer routes. The key travels in the header that `request` adds.
+
+export const checkOfficerKey = () => request('/api/admin/session')
+
+export const createEvent = (orgId, fields) =>
+  request(`/api/orgs/${encodeURIComponent(orgId)}/events`, {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  })
+
+export const updateEvent = (eventId, fields) =>
+  request(`/api/events/${encodeURIComponent(eventId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(fields),
+  })
+
+export const deleteEvent = (eventId) =>
+  request(`/api/events/${encodeURIComponent(eventId)}`, { method: 'DELETE' })
+
+export const listAttendees = (eventId) =>
+  request(`/api/events/${encodeURIComponent(eventId)}/attendees`)
+
+export const listReport = (limit = 10) => request(`/api/admin/report?limit=${limit}`)

@@ -1,7 +1,12 @@
 import express from 'express'
 import cors from 'cors'
 import * as repos from './repos.js'
-import { isPositiveInteger, normaliseStudentEmail, HAU_STUDENT_DOMAIN } from './validation.js'
+import {
+  isPositiveInteger,
+  normaliseStudentEmail,
+  validateEventInput,
+  HAU_STUDENT_DOMAIN,
+} from './validation.js'
 
 // The database speaks snake_case and the client speaks camelCase. One place
 // translates, so no screen has to know the column names.
@@ -24,6 +29,27 @@ const toStudent = (row) => ({
   email: row.email,
   studentNo: row.student_no,
   isAdmin: row.is_admin,
+})
+
+const toAttendee = (row) => ({
+  id: String(row.id),
+  name: row.name,
+  email: row.email,
+  studentNo: row.student_no,
+  status: row.status,
+  requestedAt: row.requested_at,
+})
+
+const toReportRow = (row) => ({
+  id: String(row.id),
+  title: row.title,
+  venue: row.venue,
+  startsAt: row.starts_at,
+  capacity: row.capacity,
+  orgName: row.org_name,
+  requests: row.requests,
+  seatsTaken: row.seats_taken,
+  rejected: row.rejected,
 })
 
 const toRequest = (row) => ({
@@ -177,8 +203,110 @@ export function createApp(pool) {
     }
   })
 
+  // Everything below this line belongs to officers.
+  //
+  // The key lives in the server environment and travels in a header, so it
+  // never reaches the built JavaScript the way a VITE_ value would. With no key
+  // configured the guard refuses every officer route: a missing key locks the
+  // door rather than leaving it open.
+  const officerKey = process.env.OFFICER_KEY || ''
+
+  function requireOfficer(request, response, next) {
+    if (!officerKey) {
+      return response.status(503).json({ error: 'This server has no officer key configured.' })
+    }
+    if (request.get('x-officer-key') !== officerKey) {
+      return response.status(401).json({ error: 'That officer key is wrong.' })
+    }
+    next()
+  }
+
+  // An officer screen calls this once to find out whether the key it holds
+  // works, before showing a dashboard it cannot use.
+  app.get('/api/admin/session', requireOfficer, (request, response) => response.json({ ok: true }))
+
+  app.post('/api/orgs/:orgId/events', requireOfficer, async (request, response, next) => {
+    try {
+      const orgs = await repos.listOrgs(pool)
+      if (!orgs.some((org) => org.id === request.params.orgId)) {
+        return response.status(404).json({ error: 'No such org' })
+      }
+
+      const { error, value } = validateEventInput(request.body)
+      if (error) return response.status(400).json({ error })
+
+      const row = await repos.createEvent(pool, { orgId: request.params.orgId, ...value })
+      response.status(201).json(toEvent(row))
+    } catch (caught) {
+      next(caught)
+    }
+  })
+
+  app.patch('/api/events/:id', requireOfficer, async (request, response, next) => {
+    try {
+      if (!isPositiveInteger(request.params.id)) {
+        return response.status(400).json({ error: 'Event id must be a number' })
+      }
+
+      const { error, value } = validateEventInput(request.body, { partial: true })
+      if (error) return response.status(400).json({ error })
+
+      // Cutting the seat limit below the seats already held would leave an
+      // event overbooked, which no later request could undo.
+      const current = await repos.getEvent(pool, Number(request.params.id))
+      if (!current) return response.status(404).json({ error: 'Event not found' })
+      if (value.capacity !== undefined && value.capacity < current.seats_taken) {
+        return response.status(409).json({
+          error: `${current.seats_taken} seats are already held. Reject some requests before lowering the limit.`,
+        })
+      }
+
+      const row = await repos.updateEvent(pool, Number(request.params.id), value)
+      if (!row) return response.status(404).json({ error: 'Event not found' })
+      response.json(toEvent(row))
+    } catch (caught) {
+      next(caught)
+    }
+  })
+
+  app.delete('/api/events/:id', requireOfficer, async (request, response, next) => {
+    try {
+      if (!isPositiveInteger(request.params.id)) {
+        return response.status(400).json({ error: 'Event id must be a number' })
+      }
+      const removed = await repos.deleteEvent(pool, Number(request.params.id))
+      if (!removed) return response.status(404).json({ error: 'Event not found' })
+      response.status(204).end()
+    } catch (caught) {
+      next(caught)
+    }
+  })
+
+  // The list an officer reads at the door.
+  app.get('/api/events/:id/attendees', requireOfficer, async (request, response, next) => {
+    try {
+      if (!isPositiveInteger(request.params.id)) {
+        return response.status(400).json({ error: 'Event id must be a number' })
+      }
+      const rows = await repos.listAttendees(pool, Number(request.params.id))
+      response.json(rows.map(toAttendee))
+    } catch (caught) {
+      next(caught)
+    }
+  })
+
+  // Which events students wanted most, answered or not.
+  app.get('/api/admin/report', requireOfficer, async (request, response, next) => {
+    try {
+      const limit = isPositiveInteger(request.query.limit) ? Math.min(Number(request.query.limit), 50) : 10
+      response.json((await repos.topEvents(pool, limit)).map(toReportRow))
+    } catch (caught) {
+      next(caught)
+    }
+  })
+
   // The officer queue.
-  app.get('/api/admin/requests', async (request, response, next) => {
+  app.get('/api/admin/requests', requireOfficer, async (request, response, next) => {
     try {
       const status = ['pending', 'approved', 'rejected'].includes(request.query.status)
         ? request.query.status
@@ -189,7 +317,7 @@ export function createApp(pool) {
     }
   })
 
-  app.post('/api/admin/requests/:id/:decision', async (request, response, next) => {
+  app.post('/api/admin/requests/:id/:decision', requireOfficer, async (request, response, next) => {
     try {
       const { id, decision } = request.params
       if (!isPositiveInteger(id)) {

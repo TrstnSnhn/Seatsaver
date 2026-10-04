@@ -197,6 +197,92 @@ export async function listRequests(pool, status = 'pending') {
   return result.rows
 }
 
+// The org dashboard. Officers own these five, and the guard in app.js is what
+// keeps a stranger out of them.
+
+export async function createEvent(pool, { orgId, title, venue, startsAt, capacity, description = '' }) {
+  const result = await pool.query(
+    `INSERT INTO events (org_id, title, venue, starts_at, capacity, description)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id`,
+    [orgId, title, venue, startsAt, capacity, description]
+  )
+  return getEvent(pool, result.rows[0].id)
+}
+
+const COLUMN_OF = {
+  title: 'title',
+  venue: 'venue',
+  startsAt: 'starts_at',
+  capacity: 'capacity',
+  description: 'description',
+}
+
+// Only the fields the officer actually changed are written, so editing the
+// venue cannot quietly overwrite the description with a stale copy.
+export async function updateEvent(pool, id, fields) {
+  const values = [id]
+  const sets = Object.entries(fields)
+    .filter(([key]) => COLUMN_OF[key])
+    .map(([key, value]) => {
+      values.push(value)
+      return `${COLUMN_OF[key]} = $${values.length}`
+    })
+
+  if (sets.length === 0) return getEvent(pool, id)
+
+  const updated = await pool.query(
+    `UPDATE events SET ${sets.join(', ')} WHERE id = $1 RETURNING id`,
+    values
+  )
+  return updated.rowCount === 0 ? null : getEvent(pool, id)
+}
+
+// The reservations go with it: the foreign key is ON DELETE CASCADE, so no row
+// is left pointing at an event that no longer exists.
+export async function deleteEvent(pool, id) {
+  const result = await pool.query('DELETE FROM events WHERE id = $1 RETURNING id', [id])
+  return result.rowCount > 0
+}
+
+// Who is coming, for the officer printing a list at the door.
+export async function listAttendees(pool, eventId) {
+  const result = await pool.query(
+    `SELECT s.id, s.name, s.email, s.student_no, r.status, r.requested_at
+     FROM reservations r
+     JOIN students s ON s.id = r.student_id
+     WHERE r.event_id = $1 AND r.status = ANY ($2)
+     ORDER BY r.status, s.name`,
+    [eventId, HOLD]
+  )
+  return result.rows
+}
+
+// The most-requested events: every request counts, answered or not, because the
+// question is which events students wanted, not which ones officers approved.
+export async function topEvents(pool, limit = 10) {
+  const result = await pool.query(
+    `SELECT
+       e.id,
+       e.title,
+       e.venue,
+       e.starts_at,
+       e.capacity,
+       o.name AS org_name,
+       count(r.id)::int                                   AS requests,
+       count(*) FILTER (WHERE r.status = ANY ($1))::int    AS seats_taken,
+       count(*) FILTER (WHERE r.status = 'rejected')::int  AS rejected
+     FROM events e
+     JOIN orgs o ON o.id = e.org_id
+     LEFT JOIN reservations r ON r.event_id = e.id
+     GROUP BY e.id, o.name
+     ORDER BY requests DESC, e.starts_at
+     LIMIT $2`,
+    [HOLD, limit]
+  )
+  return result.rows
+}
+
 export async function decideRequest(pool, { reservationId, status }) {
   const result = await pool.query(
     `UPDATE reservations
